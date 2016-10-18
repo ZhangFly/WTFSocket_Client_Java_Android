@@ -36,7 +36,7 @@ class WTFSocketReceiveThread implements Runnable {
             int len = socket.getInputStream().read(bytes);
             msg.setOriginalStr(new String(bytes, 0, len, "UTF-8"));
 
-            for (String packet : wtfSocketClient.getPackets(msg.getOriginalStr())) {
+            for (String packet : wtfSocketClient.parseAndGetPackets(msg.getOriginalStr())) {
 
                 msg = JSON.parseObject(packet, WTFSocketMsgWrapper.class);
 

@@ -52,14 +52,19 @@ class WTFSocketClient implements Runnable {
                 }
             }
 
+            // 开启超时检查
             frameSchedule.scheduleAtFixedRate(new WTFSocketCheckTimeoutThread(), 200, 200, TimeUnit.MILLISECONDS);
 
+            // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
             socket.setKeepAlive(true);
             logger.info(String.format("socket connected!\nremote address => %s\nlocal address => %s", socket.getRemoteSocketAddress(), socket.getLocalSocketAddress()));
 
+            // 开启写线程
             frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 200, 200, TimeUnit.MILLISECONDS);
+            // 开启接收监听线程
             frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 200, 200, TimeUnit.MILLISECONDS);
+            // 如果需要开启心跳包线程
             if (config.isUseHeartbeat()) {
                 frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
             }
@@ -96,7 +101,8 @@ class WTFSocketClient implements Runnable {
         }
     }
 
-    List<String> getPackets(String data) throws IOException {
+    // 解析并返回有效数据包
+    synchronized List<String> parseAndGetPackets(String data) throws IOException {
 
         List<String> packets = new ArrayList<>();
         buffer.append(data);
@@ -114,11 +120,13 @@ class WTFSocketClient implements Runnable {
         return packets;
     }
 
-    Socket getSocket() {
-        return socket;
+    // 清空buffer
+    synchronized void clearBuffer() {
+        buffer.setLength(0);
     }
 
-    void clearBuffer() {
-        buffer.setLength(0);
+    // 获取socket实例
+    Socket getSocket() {
+        return socket;
     }
 }
