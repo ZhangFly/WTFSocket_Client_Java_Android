@@ -12,18 +12,24 @@ class WTFSocketSendThread implements Runnable {
 
     private static final Logger logger = Logger.getLogger("socket");
 
-    private Socket socket;
+    private WTFSocketClient wtfSocketClient;
+
+    WTFSocketSendThread(WTFSocketClient socket) {
+        this.wtfSocketClient = socket;
+    }
 
     @Override
     public void run() {
 
-        logger.info("socket send thread start");
-
-        while (socket != null && !socket.isClosed()) {
 
             WTFSocketMsgWrapper msg = new WTFSocketMsgWrapper();
+        Socket socket = wtfSocketClient.getSocket();
 
             try {
+
+                if (socket.isClosed()) {
+                    return;
+                }
 
                 if (WTFSocketSessionFactory.SERVER.hasMsg()) {
                     doWrite(WTFSocketSessionFactory.SERVER, msg);
@@ -36,11 +42,6 @@ class WTFSocketSendThread implements Runnable {
                     }
                 }
 
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, e.getMessage());
-                }
             } catch (IOException e) {
                 WTFSocketException exception = new WTFSocketException(e.getMessage());
                 exception.setLocation(this.getClass().getName() + "$run");
@@ -50,8 +51,6 @@ class WTFSocketSendThread implements Runnable {
             }
         }
 
-        logger.info("socket send thread stop");
-    }
 
     private void doWrite(WTFSocketSession session, WTFSocketMsgWrapper msg) throws IOException {
 
@@ -68,12 +67,8 @@ class WTFSocketSendThread implements Runnable {
                         msg.getTo(),
                         msgStr));
             }
-            socket.getOutputStream().write((msgStr + WTFSocketClient.EOT).getBytes());
+            wtfSocketClient.getSocket().getOutputStream().write((msgStr + WTFSocketClient.EOT).getBytes());
         }
     }
 
-    WTFSocketSendThread bindSocket(Socket socket) {
-        this.socket = socket;
-        return this;
-    }
 }

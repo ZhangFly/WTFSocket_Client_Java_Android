@@ -3,6 +3,9 @@ package wtf.socket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 /**
@@ -17,15 +20,15 @@ class WTFSocketClient implements Runnable {
 
     // 连接地址
     private WTFSocketConfig config;
+
     // socket 实例
     private Socket socket;
-    // socket 接收线程
-    private WTFSocketReceiveThread receiveThread = new WTFSocketReceiveThread();
-    // socket 发送线程
-    private WTFSocketSendThread sendThread = new WTFSocketSendThread();
-    // socket 心跳线程
-    private WTFSocketHeartbeatThread beatThread = new WTFSocketHeartbeatThread();
 
+    // 框架轮询器
+    private ScheduledExecutorService frameSchedule = Executors.newScheduledThreadPool(4);
+
+    // 缓冲器
+    private StringBuffer buffer = new StringBuffer();
 
     WTFSocketClient(WTFSocketConfig config) {
         this.config = config;
@@ -49,18 +52,16 @@ class WTFSocketClient implements Runnable {
                 }
             }
 
+            frameSchedule.scheduleAtFixedRate(new WTFSocketCheckTimeoutThread(), 200, 200, TimeUnit.MILLISECONDS);
+
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
             socket.setKeepAlive(true);
             logger.info(String.format("socket connected!\nremote address => %s\nlocal address => %s", socket.getRemoteSocketAddress(), socket.getLocalSocketAddress()));
 
-            // 开启监听线程
-            new Thread(receiveThread.bindSocket(socket)).start();
-            // 开启写线程
-            new Thread(sendThread.bindSocket(socket)).start();
-
-            // 如果需要，开启心跳线程
+            frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 200, 200, TimeUnit.MILLISECONDS);
+            frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 200, 200, TimeUnit.MILLISECONDS);
             if (config.isUseHeartbeat()) {
-                new Thread(beatThread.bindSocket(socket)).start();
+                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
             }
 
             WTFSocketSessionFactory.setIsAvailable(true);
@@ -79,12 +80,13 @@ class WTFSocketClient implements Runnable {
 
     // 开启客户端
     void start() {
-        new Thread(this).start();
+        frameSchedule.execute(this);
     }
 
     // 关闭客户端
     void close() {
         try {
+            frameSchedule.shutdown();
             socket.close();
         } catch (IOException e) {
             WTFSocketException exception = new WTFSocketException(e.getMessage());
@@ -94,4 +96,29 @@ class WTFSocketClient implements Runnable {
         }
     }
 
+    List<String> getPackets(String data) throws IOException {
+
+        List<String> packets = new ArrayList<>();
+        buffer.append(data);
+
+        while (true) {
+            int index = buffer.indexOf(WTFSocketClient.EOT);
+            if (index == -1) {
+                break;
+            }
+            String packet = buffer.substring(0, index);
+            buffer.delete(0, index + 2);
+            packets.add(packet);
+        }
+
+        return packets;
+    }
+
+    Socket getSocket() {
+        return socket;
+    }
+
+    void clearBuffer() {
+        buffer.setLength(0);
+    }
 }

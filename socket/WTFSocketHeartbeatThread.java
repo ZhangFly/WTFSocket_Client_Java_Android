@@ -7,12 +7,9 @@ import java.util.logging.Logger;
 class WTFSocketHeartbeatThread implements Runnable {
 
     private static Logger logger = Logger.getLogger("socket");
-    private Socket socket;
 
     @Override
     public void run() {
-
-        while (socket != null && !socket.isClosed()) {
 
             WTFSocketMsg heartbeatMsg = WTFSocketMsg.heartbeat();
             WTFSocketSessionFactory.HEARTBEAT.sendMsg(heartbeatMsg, new WTFSocketHandler() {
@@ -37,19 +34,5 @@ class WTFSocketHeartbeatThread implements Runnable {
                     return true;
                 }
             }, 15_000);
-
-            try {
-                Thread.sleep(5_000);
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, e.getMessage());
-            }
         }
-
-        logger.info("socket beat thread stop");
-    }
-
-    WTFSocketHeartbeatThread bindSocket(Socket socket) {
-        this.socket = socket;
-        return this;
-    }
 }
