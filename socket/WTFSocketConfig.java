@@ -1,0 +1,48 @@
+package wtf.socket;
+
+/**
+ * socket连接配置
+ */
+public class WTFSocketConfig {
+
+    private String ip;
+    private int port;
+    private String localName;
+    private boolean isUseHeartbeat = false;
+
+    public String getIp() {
+        return ip;
+    }
+
+    public WTFSocketConfig setIp(String ip) {
+        this.ip = ip;
+        return this;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public WTFSocketConfig setPort(int port) {
+        this.port = port;
+        return this;
+    }
+
+    public String getLocalName() {
+        return localName;
+    }
+
+    public WTFSocketConfig setLocalName(String localName) {
+        this.localName = localName;
+        return this;
+    }
+
+    public boolean isUseHeartbeat() {
+        return isUseHeartbeat;
+    }
+
+    public WTFSocketConfig setUseHeartbeat(boolean useHeartbeat) {
+        this.isUseHeartbeat = useHeartbeat;
+        return this;
+    }
+}
