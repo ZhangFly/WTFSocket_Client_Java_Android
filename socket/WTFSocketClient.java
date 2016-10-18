@@ -66,7 +66,7 @@ class WTFSocketClient implements Runnable {
             frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 200, 200, TimeUnit.MILLISECONDS);
             // 如果需要开启心跳包线程
             if (config.isUseHeartbeat()) {
-                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
             }
 
             WTFSocketSessionFactory.setIsAvailable(true);

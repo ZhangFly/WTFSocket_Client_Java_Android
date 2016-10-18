@@ -1,12 +1,15 @@
 package wtf.socket;
 
-import java.net.Socket;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class WTFSocketHeartbeatThread implements Runnable {
 
     private static Logger logger = Logger.getLogger("socket");
+    private int breakTime;
+
+    WTFSocketHeartbeatThread(int breakTime) {
+        this.breakTime = breakTime;
+    }
 
     @Override
     public void run() {
@@ -33,6 +36,6 @@ class WTFSocketHeartbeatThread implements Runnable {
 
                     return true;
                 }
-            }, 15_000);
+            }, breakTime);
         }
 }

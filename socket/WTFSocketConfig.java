@@ -10,6 +10,7 @@ public class WTFSocketConfig {
     private String localName;
     private boolean isUseHeartbeat = false;
     private int heartbeatPeriod = 5_000;
+    private int heartbeatBreakTime = 3;
 
     public String getIp() {
         return ip;
@@ -53,6 +54,15 @@ public class WTFSocketConfig {
 
     public WTFSocketConfig setHeartbeatPeriod(int heartbeatPeriod) {
         this.heartbeatPeriod = heartbeatPeriod;
+        return this;
+    }
+
+    public int getHeartbeatBreakTime() {
+        return heartbeatBreakTime;
+    }
+
+    public WTFSocketConfig setHeartbeatBreakTime(int heartbeatBreakTime) {
+        this.heartbeatBreakTime = heartbeatBreakTime;
         return this;
     }
 }
