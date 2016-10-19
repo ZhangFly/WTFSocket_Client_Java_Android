@@ -28,7 +28,7 @@ class WTFSocketHeartbeatThread implements Runnable {
                 @Override
                 public boolean onException(WTFSocketSession session, WTFSocketMsg msg, WTFSocketException e) {
 
-                    session.clearWaitResponses();
+                    session.clearWaitResponseMsg();
 
                     WTFSocketSessionFactory.setIsAvailable(false);
 

@@ -238,19 +238,19 @@ public class WTFSocketSessionFactory {
     }
 
     // 消息派发
-    static boolean dispatchMsg(WTFSocketMsgWrapper msg) {
+    static boolean dispatchMsg(WTFSocketMsgWrapper msgWrapper) {
 
         // 处理心跳包
-        if (msg.getMsgType() == 0) {
-            return HEARTBEAT.dispatchMsg(msg);
+        if (msgWrapper.getMsgType() == 0) {
+            return HEARTBEAT.dispatchMsg(msgWrapper);
         }
 
         // 处理普通消息
-        WTFSocketSession session = getSession(msg.getFrom());
+        WTFSocketSession session = getSession(msgWrapper.getFrom());
 
-        if (!session.dispatchMsg(msg)) {
-            if (!defaultResponse.onReceive(session, msg.getMsg())) {
-                return printHandler.onReceive(session, msg.getMsg());
+        if (!session.dispatchMsg(msgWrapper)) {
+            if (!defaultResponse.onReceive(session, msgWrapper.getMsg())) {
+                return printHandler.onReceive(session, msgWrapper.getMsg());
             }
         }
 
@@ -258,16 +258,16 @@ public class WTFSocketSessionFactory {
     }
 
     // 异常派发
-    static boolean dispatchException(WTFSocketException e) {
+    static boolean dispatchException(WTFSocketMsgWrapper msgWrapper, WTFSocketException e) {
 
-        WTFSocketMsgWrapper msg = e.getMsg();
-        WTFSocketSession session = msg.getBelong();
 
-        if (!session.dispatchException(e)) {
+        WTFSocketSession session = msgWrapper.getBelong();
+
+        if (!session.dispatchException(msgWrapper, e)) {
             // 会话对象无法处理消息
             // 使用默认响应函数
-            if (!defaultResponse.onException(msg.getBelong(), msg.getMsg(), e)) {
-                return printHandler.onException(session, msg.getMsg(), e);
+            if (!defaultResponse.onException(msgWrapper.getBelong(), msgWrapper.getMsg(), e)) {
+                return printHandler.onException(session, msgWrapper.getMsg(), e);
             }
 
         }
@@ -275,12 +275,4 @@ public class WTFSocketSessionFactory {
         return true;
     }
 
-    // 检查超时
-    static void checkTimeout() {
-
-        for (WTFSocketSession session : sessions.values()) {
-            session.checkTimeout();
-        }
-
-    }
 }

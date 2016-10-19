@@ -3,7 +3,6 @@ package wtf.socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.sun.istack.internal.Nullable;
 import com.sun.javafx.beans.annotations.NonNull;
 
 class WTFSocketMsgWrapper {
@@ -20,18 +19,18 @@ class WTFSocketMsgWrapper {
 
     @NonNull
     @JSONField(serialize = false)
-    private WTFSocketHandler handler;
+    private WTFSocketHandler handler = new WTFSocketHandler() {};
 
-    @Nullable
+    @NonNull
     @JSONField(serialize = false)
-    private Long timeout;
+    private Long timeout = Long.MAX_VALUE;
 
     @NonNull
     @JSONField(serialize = false)
     private boolean isNeedResponse = false;
 
     public WTFSocketMsgWrapper() {
-        this(null, null);
+        this(null, WTFSocketMsg.empty());
     }
 
     public WTFSocketMsgWrapper(WTFSocketSession belong, WTFSocketMsg msg) {
@@ -41,7 +40,6 @@ class WTFSocketMsgWrapper {
             msg = WTFSocketMsg.empty();
         }
 
-        // belong 不能为空
         if (belong == null) {
             belong = WTFSocketSessionFactory.getSession("Inner");
         }
@@ -53,9 +51,6 @@ class WTFSocketMsgWrapper {
 
         this.msg = msg;
         this.belong = belong;
-
-        // 每个消息必须有处理对象
-        this.handler = new WTFSocketHandler() {};
     }
 
     public String getFrom() {
@@ -188,8 +183,14 @@ class WTFSocketMsgWrapper {
         return String.valueOf(getMsgId().intValue());
     }
 
+    @JSONField(serialize = false)
+    public boolean isTimeout() {
+        return timeout < System.currentTimeMillis();
+    }
+
     @Override
     public String toString() {
         return JSON.toJSONString(this);
     }
+
 }

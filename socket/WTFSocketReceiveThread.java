@@ -20,8 +20,6 @@ class WTFSocketReceiveThread implements Runnable {
     @Override
     public void run() {
 
-        WTFSocketMsgWrapper msg = new WTFSocketMsgWrapper();
-
         try {
             Socket socket = wtfSocketClient.getSocket();
 
@@ -37,36 +35,32 @@ class WTFSocketReceiveThread implements Runnable {
 
             byte bytes[] = new byte[toReadLen];
             int readLen = socket.getInputStream().read(bytes);
-            msg.setOriginalStr(new String(bytes, 0, readLen));
+            String originalStr = new String(bytes, 0, readLen);
 
-            for (String packet : wtfSocketClient.parseAndGetPackets(msg.getOriginalStr())) {
+            for (String packet : wtfSocketClient.parseAndGetPackets(originalStr)) {
 
-                msg = JSON.parseObject(packet, WTFSocketMsgWrapper.class);
+                WTFSocketMsgWrapper msgWrapper = JSON.parseObject(packet, WTFSocketMsgWrapper.class);
 
-                if (msg.getFrom() == null || msg.getTo() == null || msg.getMsgId() == null || msg.getMsgType() == null) {
+                if (msgWrapper.getFrom() == null || msgWrapper.getTo() == null || msgWrapper.getMsgId() == null || msgWrapper.getMsgType() == null) {
                     throw new IOException("protocol err!");
                 }
 
-                if (msg.getMsgType() == 1) {
+                if (msgWrapper.getMsgType() == 1) {
                     logger.info(String.format("received msg from <%s> to <%s>:\nmsg => %s",
-                            msg.getFrom(),
-                            msg.getTo(),
-                            msg));
-
+                            msgWrapper.getFrom(),
+                            msgWrapper.getTo(),
+                            msgWrapper));
                 }
-                WTFSocketSessionFactory.dispatchMsg(msg);
+                WTFSocketSessionFactory.dispatchMsg(msgWrapper);
             }
 
         } catch (IOException | JSONException e) {
-
             wtfSocketClient.clearBuffer();
 
-            WTFSocketException exception = new WTFSocketException(e.getMessage());
-            exception.setLocation(this.getClass().getName() + "$run");
-            exception.setMsg(msg);
-
-            WTFSocketSessionFactory.dispatchException(exception);
+            WTFSocketSessionFactory.dispatchException(
+                    new WTFSocketMsgWrapper(),
+                    new WTFSocketException(e.getMessage())
+                            .setLocation(this.getClass().getName() + "$run"));
         }
-
     }
 }
