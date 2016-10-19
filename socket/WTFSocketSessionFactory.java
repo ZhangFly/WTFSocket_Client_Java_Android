@@ -241,6 +241,10 @@ public class WTFSocketSessionFactory {
     // 消息派发
     static boolean dispatchMsg(WTFSocketMsgWrapper msg) {
 
+        if (msg.getMsgType() == 0) {
+            return HEARTBEAT.dispatchMsg(msg);
+        }
+
         WTFSocketSession session = getSession(msg.getFrom());
 
         if (!session.dispatchMsg(msg)) {

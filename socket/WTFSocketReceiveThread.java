@@ -25,16 +25,19 @@ class WTFSocketReceiveThread implements Runnable {
         try {
             Socket socket = wtfSocketClient.getSocket();
 
-            if (socket.isClosed()) {
-                return;
-            }
-            if (socket.getInputStream().available() <= 0) {
+            if (socket.isClosed() || !socket.isConnected()) {
                 return;
             }
 
-            byte bytes[] = new byte[2048];
-            int len = socket.getInputStream().read(bytes);
-            msg.setOriginalStr(new String(bytes, 0, len, "UTF-8"));
+            int toReadLen = socket.getInputStream().available();
+
+            if (toReadLen <= 0) {
+                return;
+            }
+
+            byte bytes[] = new byte[toReadLen];
+            int readLen = socket.getInputStream().read(bytes);
+            msg.setOriginalStr(new String(bytes, 0, readLen));
 
             for (String packet : wtfSocketClient.parseAndGetPackets(msg.getOriginalStr())) {
 
