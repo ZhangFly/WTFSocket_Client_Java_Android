@@ -79,8 +79,7 @@ class WTFSocketClient implements Runnable {
         } catch (IOException e) {
             WTFSocketException exception = new WTFSocketException(e.getMessage());
             exception.setLocation(this.getClass().getName() + "$run");
-//            exception.setMsg(new WTFSocketMsgWrapper());
-//            WTFSocketSessionFactory.dispatchException(exception);
+            WTFSocketSessionFactory.dispatchException(new WTFSocketMsgWrapper(), exception);
         }
     }
 
@@ -97,6 +96,7 @@ class WTFSocketClient implements Runnable {
         } catch (IOException e) {
             WTFSocketException exception = new WTFSocketException(e.getMessage());
             exception.setLocation(this.getClass().getName() + "$close");
+            WTFSocketSessionFactory.dispatchException(new WTFSocketMsgWrapper(), exception);
         }
     }
 
