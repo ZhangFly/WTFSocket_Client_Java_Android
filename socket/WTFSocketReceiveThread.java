@@ -11,14 +11,16 @@ class WTFSocketReceiveThread implements Runnable {
 
     private static final Logger logger = Logger.getLogger("socket");
 
-    private WTFSocketClient wtfSocketClient;
+    private WTFSocketBootstrapThread wtfSocketClient;
 
-    WTFSocketReceiveThread(WTFSocketClient wtfSocketClient) {
+    WTFSocketReceiveThread(WTFSocketBootstrapThread wtfSocketClient) {
         this.wtfSocketClient = wtfSocketClient;
     }
 
     @Override
     public void run() {
+
+        WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper();
 
         try {
             Socket socket = wtfSocketClient.getSocket();
@@ -35,11 +37,11 @@ class WTFSocketReceiveThread implements Runnable {
 
             byte bytes[] = new byte[toReadLen];
             int readLen = socket.getInputStream().read(bytes);
-            String originalStr = new String(bytes, 0, readLen);
+            msgWrapper.setOriginalStr(new String(bytes, 0, readLen));
 
-            for (String packet : wtfSocketClient.parseAndGetPackets(originalStr)) {
+            for (String packet : wtfSocketClient.parseAndGetPackets(msgWrapper.getOriginalStr())) {
 
-                WTFSocketMsgWrapper msgWrapper = JSON.parseObject(packet, WTFSocketMsgWrapper.class);
+                msgWrapper = JSON.parseObject(packet, WTFSocketMsgWrapper.class);
 
                 if (msgWrapper.getFrom() == null || msgWrapper.getTo() == null || msgWrapper.getMsgId() == null || msgWrapper.getMsgType() == null) {
                     throw new IOException("protocol err!");
@@ -56,11 +58,7 @@ class WTFSocketReceiveThread implements Runnable {
 
         } catch (IOException | JSONException e) {
             wtfSocketClient.clearBuffer();
-
-            WTFSocketSessionFactory.dispatchException(
-                    new WTFSocketMsgWrapper(),
-                    new WTFSocketException(e.getMessage())
-                            .setLocation(this.getClass().getName() + "$run"));
+            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()), msgWrapper);
         }
     }
 }

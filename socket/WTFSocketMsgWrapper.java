@@ -8,24 +8,19 @@ import com.sun.javafx.beans.annotations.NonNull;
 class WTFSocketMsgWrapper {
 
     /* 包装对象 */
-    @NonNull
     @JSONField(serialize = false)
     private WTFSocketMsg msg;
 
     /* 辅助属性 */
-    @NonNull
     @JSONField(serialize = false)
     private WTFSocketSession belong;
 
-    @NonNull
     @JSONField(serialize = false)
     private WTFSocketHandler handler = new WTFSocketHandler() {};
 
-    @NonNull
     @JSONField(serialize = false)
     private Long timeout = Long.MAX_VALUE;
 
-    @NonNull
     @JSONField(serialize = false)
     private boolean isNeedResponse = false;
 
@@ -41,7 +36,7 @@ class WTFSocketMsgWrapper {
         }
 
         if (belong == null) {
-            belong = WTFSocketSessionFactory.getSession("Inner");
+            belong = WTFSocketSessionFactory.EMPTY;
         }
 
         msg.setFrom(belong.getFrom());

@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 /**
  * Socket通信客户端
  */
-class WTFSocketClient implements Runnable {
+class WTFSocketBootstrapThread implements Runnable {
 
     private static Logger logger = Logger.getLogger("socket");
 
@@ -31,7 +31,7 @@ class WTFSocketClient implements Runnable {
     private StringBuffer buffer = new StringBuffer();
 
 
-    WTFSocketClient(WTFSocketConfig config) {
+    WTFSocketBootstrapThread(WTFSocketConfig config) {
         this.config = config;
     }
 
@@ -54,6 +54,7 @@ class WTFSocketClient implements Runnable {
             }
 
             // 开启写线程
+            // 写线程同时负责检查消息是否超时
             frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
             // 开启接收监听线程
             frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
@@ -63,23 +64,21 @@ class WTFSocketClient implements Runnable {
                 frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
             }
 
-
             // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
             socket.setKeepAlive(true);
             logger.info(String.format("socket connected!\nremote address => %s\nlocal address => %s", socket.getRemoteSocketAddress(), socket.getLocalSocketAddress()));
 
-
+            // 更新框架状态
             WTFSocketSessionFactory.setIsAvailable(true);
 
+            // 通知所有监听者框架已就绪
             for (WTFSocketEventListener listener : WTFSocketSessionFactory.getEventListeners()) {
                 listener.onConnect();
             }
 
         } catch (IOException e) {
-            WTFSocketException exception = new WTFSocketException(e.getMessage());
-            exception.setLocation(this.getClass().getName() + "$run");
-            WTFSocketSessionFactory.dispatchException(new WTFSocketMsgWrapper(), exception);
+            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
         }
     }
 
@@ -91,12 +90,12 @@ class WTFSocketClient implements Runnable {
     // 关闭客户端
     void close() {
         try {
+            // 关闭线程池
             frameSchedule.shutdown();
+            // 关闭socket连接
             socket.close();
         } catch (IOException e) {
-            WTFSocketException exception = new WTFSocketException(e.getMessage());
-            exception.setLocation(this.getClass().getName() + "$close");
-            WTFSocketSessionFactory.dispatchException(new WTFSocketMsgWrapper(), exception);
+            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
         }
     }
 
@@ -107,7 +106,7 @@ class WTFSocketClient implements Runnable {
         buffer.append(data);
 
         while (true) {
-            int index = buffer.indexOf(WTFSocketClient.EOT);
+            int index = buffer.indexOf(WTFSocketBootstrapThread.EOT);
             if (index == -1) {
                 break;
             }

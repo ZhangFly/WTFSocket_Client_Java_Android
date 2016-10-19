@@ -73,13 +73,16 @@ public class WTFSocketSession {
     /**
      * 发送消息给会话对象
      * 会自动添加新的msgId
-     * 并通过 handler 对象处理回复
+     * 不接受回复
+     * 在超时后自动自动删除
      *
-     * @param msg     消息对象
-     * @param handler 响应方法
+     * @param msg 消息对象
+     * @param timeout 超时时间，单位ms，不能低于500ms
      */
-    public void sendMsg(WTFSocketMsg msg, WTFSocketHandler handler) {
-        sendMsg(msg, handler, 0);
+    public void sendMsg(WTFSocketMsg msg, int timeout) {
+
+        sendMsg(msg, null, timeout);
+
     }
 
     /**
@@ -89,13 +92,24 @@ public class WTFSocketSession {
      *
      * @param msg     消息对象
      * @param handler 响应方法
-     * @param timeout 等待超时，不能低于200ms
+     */
+    public void sendMsg(WTFSocketMsg msg, WTFSocketHandler handler) {
+        sendMsg(msg, handler, Integer.MAX_VALUE);
+    }
+
+    /**
+     * 发送消息给会话对象
+     * 会自动添加新的msgId
+     * 并通过 handler 对象处理回复
+     * 在超时后会处罚 handler 处理
+     *
+     * @param msg     消息对象
+     * @param handler 响应方法
+     * @param timeout 超时时间，单位ms，不能低于500ms
      */
     public void sendMsg(WTFSocketMsg msg, WTFSocketHandler handler, int timeout) {
 
-        if (timeout == 0) {
-            timeout = 60_1000;
-        } else if (timeout < 500) {
+        if (timeout < 500) {
             timeout = 500;
         }
 
@@ -225,18 +239,20 @@ public class WTFSocketSession {
     // 检查是否有发送超时
     void checkSendTimeout() {
 
-        List<WTFSocketMsgWrapper> toRemove = new ArrayList<>();
         if (!waitSendMsg.isEmpty()) {
+
+            List<WTFSocketMsgWrapper> timeoutMsg = new ArrayList<>();
+
             for (WTFSocketMsgWrapper msgWrapper : waitSendMsg) {
                 if (msgWrapper.isTimeout()) {
                     WTFSocketSessionFactory.dispatchException(
-                            msgWrapper,
-                            new WTFSocketException("response timeout")
-                                    .setLocation(this.getClass().getName()));
-                    toRemove.add(msgWrapper);
+                            new WTFSocketException("wait send timed out"),
+                            msgWrapper);
+                    timeoutMsg.add(msgWrapper);
                 }
             }
-            for (WTFSocketMsgWrapper msgWrapper : toRemove) {
+
+            for (WTFSocketMsgWrapper msgWrapper : timeoutMsg) {
                 waitSendMsg.remove(msgWrapper);
             }
         }
@@ -245,21 +261,21 @@ public class WTFSocketSession {
 
     // 检查是否有等待回复超时
     void checkResponseTimeout() {
-        List<WTFSocketMsgWrapper> toRemove = new ArrayList<>();
 
         if (!waitResponseMsg.isEmpty()) {
+
+            List<WTFSocketMsgWrapper> timeoutMsg = new ArrayList<>();
 
             for (WTFSocketMsgWrapper msgWrapper : waitResponseMsg.values()) {
                 if (msgWrapper.isTimeout()) {
                     WTFSocketSessionFactory.dispatchException(
-                            msgWrapper,
-                            new WTFSocketException("response timeout")
-                                    .setLocation(this.getClass().getName()));
-                    toRemove.add(msgWrapper);
+                            new WTFSocketException("wait response timed out"),
+                            msgWrapper);
+                    timeoutMsg.add(msgWrapper);
                 }
             }
 
-            for (WTFSocketMsgWrapper msgWrapper : toRemove) {
+            for (WTFSocketMsgWrapper msgWrapper : timeoutMsg) {
                 waitResponseMsg.remove(msgWrapper.getTag());
             }
         }

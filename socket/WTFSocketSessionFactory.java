@@ -27,12 +27,15 @@ public class WTFSocketSessionFactory {
     // 心跳包会话
     static WTFSocketSession HEARTBEAT;
 
+    // 空会话
+    static WTFSocketSession EMPTY;
+
     private static ConcurrentHashMap<String, WTFSocketSession> sessions = new ConcurrentHashMap<>();
 
     private static volatile boolean isAvailable = false;
 
     // socket 客服端
-    private static WTFSocketClient socketClient;
+    private static WTFSocketBootstrapThread socketClient;
 
     // 自增的消息ID
     private static AtomicInteger msgId = new AtomicInteger(0);
@@ -56,13 +59,12 @@ public class WTFSocketSessionFactory {
 
         @Override
         public boolean onException(WTFSocketSession session, WTFSocketMsg msg, WTFSocketException e) {
-            logger.log(Level.WARNING, String.format("printHandler: occur exception from <%s> to <%s>:\noriginalStr => %s\nmsg => %s\nwhere => %s\ncause => %s",
+            logger.log(Level.WARNING, String.format("printHandler: occur exception from <%s> to <%s>:\noriginalStr => %s\nmsg => %s\n%s",
                     session.getFrom(),
                     session.getTo(),
                     msg.getOriginalStr(),
-                    JSON.toJSONString(msg),
-                    e.getLocation(),
-                    e.getLocalizedMessage()));
+                    msg,
+                    e.getMessage()));
             return true;
         }
     };
@@ -102,18 +104,17 @@ public class WTFSocketSessionFactory {
         if (HEARTBEAT != null) {
             HEARTBEAT.close();
         }
+        EMPTY = getSession("empty");
         HEARTBEAT = getSession("heartbeat");
 
-        WTFSocketSessionFactory.socketClient = new WTFSocketClient(config);
+        WTFSocketSessionFactory.socketClient = new WTFSocketBootstrapThread(config);
         socketClient.start();
-
     }
 
     /**
      * 反初始化
      */
     public static void deInit() {
-
         socketClient.close();
         isAvailable = false;
         for (WTFSocketEventListener listener : eventListeners) {
@@ -125,7 +126,6 @@ public class WTFSocketSessionFactory {
      * 复位
      */
     public static void reInit() {
-
         if (isAvailable) {
             deInit();
         }
@@ -146,7 +146,7 @@ public class WTFSocketSessionFactory {
 
         WTFSocketSession session = new WTFSocketSession(config.getLocalName(), to);
         sessions.put(to, session);
-        if (!"server".equals(to) && !"Inner".equals(to) && !"heartbeat".equals(to))
+        if (!"server".equals(to) && !"empty".equals(to) && !"heartbeat".equals(to))
             for (WTFSocketEventListener listener : eventListeners) {
                 listener.onNewSession(session);
             }
@@ -258,8 +258,11 @@ public class WTFSocketSessionFactory {
     }
 
     // 异常派发
-    static boolean dispatchException(WTFSocketMsgWrapper msgWrapper, WTFSocketException e) {
+    static boolean dispatchException(WTFSocketException e, WTFSocketMsgWrapper msgWrapper) {
 
+        if (msgWrapper == null) {
+            msgWrapper = new WTFSocketMsgWrapper();
+        }
 
         WTFSocketSession session = msgWrapper.getBelong();
 
@@ -273,6 +276,12 @@ public class WTFSocketSessionFactory {
         }
 
         return true;
+    }
+
+    // 异常派发
+    static boolean dispatchException(WTFSocketException e) {
+
+        return dispatchException(e, null);
     }
 
 }

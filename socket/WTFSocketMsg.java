@@ -14,38 +14,28 @@ import com.sun.javafx.beans.annotations.NonNull;
 public class WTFSocketMsg {
 
     /* 协议必备属性 */
-    @NonNull
     private String from = "selfId";
 
-    @NonNull
     private String to = "server";
 
-    @NonNull
     private Integer msgId = -1;
 
-    @NonNull
     private Integer msgType = 1;
 
     /* 协议可选属性 */
-    @Nullable
     private Integer flag;
 
-    @Nullable
     private Integer errCode;
 
-    @Nullable
     private Integer cmd;
 
-    @Nullable
     private JSONArray params;
 
 
     /* 辅助属性 */
-    @Nullable
     @JSONField(serialize = false)
     private String originalStr;
 
-    @Nullable
     @JSONField(serialize = false)
     private WTFSocketMsgWrapper wrapper;
 

@@ -12,9 +12,9 @@ class WTFSocketSendThread implements Runnable {
 
     private static final Logger logger = Logger.getLogger("socket");
 
-    private WTFSocketClient wtfSocketClient;
+    private WTFSocketBootstrapThread wtfSocketClient;
 
-    WTFSocketSendThread(WTFSocketClient socket) {
+    WTFSocketSendThread(WTFSocketBootstrapThread socket) {
         this.wtfSocketClient = socket;
     }
 
@@ -24,15 +24,13 @@ class WTFSocketSendThread implements Runnable {
         WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper();
 
         try {
+            // 检查是否有等待回复的消息超时
+            WTFSocketSessionFactory.SERVER.checkResponseTimeout();
+            // 检查是否有等待发送的消息超时
+            WTFSocketSessionFactory.SERVER.checkSendTimeout();
             if (WTFSocketSessionFactory.SERVER.hasWaitSendMsg()) {
-                // 检查是否有等待回复的消息超时
-                WTFSocketSessionFactory.SERVER.checkResponseTimeout();
-                if (WTFSocketSessionFactory.SERVER.hasWaitSendMsg()) {
-                    // 检查是否有等待发送的消息超时
-                    WTFSocketSessionFactory.SERVER.checkSendTimeout();
-                    // 发送可用消息超时
-                    doWrite(WTFSocketSessionFactory.SERVER);
-                }
+                // 发送可用消息超时
+                doWrite(WTFSocketSessionFactory.SERVER);
             }
 
             for (WTFSocketSession session : WTFSocketSessionFactory.getSessions()) {
@@ -44,18 +42,15 @@ class WTFSocketSendThread implements Runnable {
 
                 // 检查是否有等待回复的消息超时
                 session.checkResponseTimeout();
+                // 检查是否有等待发送的消息超时
+                session.checkSendTimeout();
                 if (session.hasWaitSendMsg()) {
-                    // 检查是否有等待发送的消息超时
-                    session.checkSendTimeout();
                     // 发送可用消息超时
                     doWrite(session);
                 }
             }
-
         } catch (IOException e) {
-            WTFSocketException exception = new WTFSocketException(e.getMessage());
-            exception.setLocation(this.getClass().getName() + "$run");
-            WTFSocketSessionFactory.dispatchException(msgWrapper, exception);
+            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
         }
 
     }
@@ -71,7 +66,7 @@ class WTFSocketSendThread implements Runnable {
         ConcurrentHashMap<String, WTFSocketMsgWrapper> waitResponseMsg = session.getWaitResponseMsg();
 
         // 需要从发送队列中移除的消息
-        List<WTFSocketMsgWrapper> toRemove = new ArrayList<>();
+        List<WTFSocketMsgWrapper> sentMsg = new ArrayList<>();
 
         for (WTFSocketMsgWrapper msgWrapper : waitSendMsg) {
 
@@ -81,17 +76,17 @@ class WTFSocketSendThread implements Runnable {
             }
 
             if (msgWrapper.getMsgType() != 0) {
-                logger.info(String.format("sendMsg msg from <%s> to <%s>:\nmsg => %s",
+                logger.info(String.format("send msg from <%s> to <%s>:\nmsg => %s",
                         msgWrapper.getFrom(),
                         msgWrapper.getTo(),
                         msgWrapper));
             }
 
-            socket.getOutputStream().write((msgWrapper + WTFSocketClient.EOT).getBytes());
-            toRemove.add(msgWrapper);
+            socket.getOutputStream().write((msgWrapper + WTFSocketBootstrapThread.EOT).getBytes());
+            sentMsg.add(msgWrapper);
         }
 
-        for (WTFSocketMsgWrapper msgWrapper : toRemove) {
+        for (WTFSocketMsgWrapper msgWrapper : sentMsg) {
             waitSendMsg.remove(msgWrapper);
             if (msgWrapper.isNeedResponse()) {
                 waitResponseMsg.put(msgWrapper.getTag(), msgWrapper);

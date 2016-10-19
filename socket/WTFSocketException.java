@@ -5,18 +5,23 @@ package wtf.socket;
  */
 public class WTFSocketException extends Exception{
 
-    private String location;
+    private String msg;
 
     WTFSocketException(String msg) {
-        super(msg);
+
+        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+        int lineNo = element.getLineNumber();
+        this.msg = String.format(
+                "where => %s$%s\ncause => %s",
+                element.getClassName(),
+                element.getMethodName(),
+                msg);
+
     }
 
-    public String getLocation() {
-        return location;
+    @Override
+    public String getMessage() {
+        return msg;
     }
 
-    WTFSocketException setLocation(String location) {
-        this.location = location;
-        return this;
-    }
 }
