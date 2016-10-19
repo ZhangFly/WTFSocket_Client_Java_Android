@@ -99,11 +99,10 @@ public class WTFSocketSessionFactory {
         // 每次复位，主会话将会保留
         // 心跳会话将会重新开启
         SERVER = getSession("server");
-        getSession("Heartbeat").close();
         if (HEARTBEAT != null) {
             HEARTBEAT.close();
         }
-        HEARTBEAT = getSession("Heartbeat");
+        HEARTBEAT = getSession("heartbeat");
 
         WTFSocketSessionFactory.socketClient = new WTFSocketClient(config);
         socketClient.start();
@@ -147,7 +146,7 @@ public class WTFSocketSessionFactory {
 
         WTFSocketSession session = new WTFSocketSession(config.getLocalName(), to);
         sessions.put(to, session);
-        if (!"server".equals(to) && !"Inner".equals(to))
+        if (!"server".equals(to) && !"Inner".equals(to) && !"heartbeat".equals(to))
             for (WTFSocketEventListener listener : eventListeners) {
                 listener.onNewSession(session);
             }
@@ -241,10 +240,12 @@ public class WTFSocketSessionFactory {
     // 消息派发
     static boolean dispatchMsg(WTFSocketMsgWrapper msg) {
 
+        // 处理心跳包
         if (msg.getMsgType() == 0) {
             return HEARTBEAT.dispatchMsg(msg);
         }
 
+        // 处理普通消息
         WTFSocketSession session = getSession(msg.getFrom());
 
         if (!session.dispatchMsg(msg)) {

@@ -47,11 +47,11 @@ class WTFSocketReceiveThread implements Runnable {
                     throw new IOException("protocol err!");
                 }
 
-                if (msg.getMsgType() == null || msg.getMsgType() == 1) {
+                if (msg.getMsgType() == 1) {
                     logger.info(String.format("received msg from <%s> to <%s>:\nmsg => %s",
                             msg.getFrom(),
                             msg.getTo(),
-                            packet));
+                            msg));
 
                 }
                 WTFSocketSessionFactory.dispatchMsg(msg);

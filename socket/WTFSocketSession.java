@@ -25,10 +25,10 @@ public class WTFSocketSession {
     };
 
     // 等待回复消息列表
-    private ConcurrentHashMap<String, WTFSocketMsgWrapper> waitResponses = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, WTFSocketMsgWrapper> waitResponse = new ConcurrentHashMap<>();
 
     // 等待发送信息列表
-    private ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitSendQ = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitSend = new ConcurrentLinkedQueue<>();
 
     WTFSocketSession(String from, String to) {
         this.from = from;
@@ -93,20 +93,19 @@ public class WTFSocketSession {
 
         if (timeout == 0) {
             timeout = Integer.MAX_VALUE;
-        } else if (timeout < 200) {
-            timeout = 200;
+        } else if (timeout < 500) {
+            timeout = 500;
         }
 
         WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper(this, msg);
-        msgWrapper.setMsgId(WTFSocketSessionFactory.getSelfIncrementMsgId());
         msgWrapper.setTimeout(System.currentTimeMillis() + timeout);
 
         if (handler != null) {
             msgWrapper.setHandler(handler);
-            waitResponses.put(msgWrapper.getTag(), msgWrapper);
+            msgWrapper.setNeedResponse(true);
         }
 
-        waitSendQ.add(msgWrapper);
+        waitSend.add(msgWrapper);
     }
 
     /**
@@ -117,7 +116,7 @@ public class WTFSocketSession {
      * @param original 原始消息
      */
     public void replyMsg(WTFSocketMsg reply, WTFSocketMsg original) {
-        waitSendQ.add(new WTFSocketMsgWrapper(this, reply)
+        waitSend.add(new WTFSocketMsgWrapper(this, reply)
                 .setMsgId(original.getMsgId()));
     }
 
@@ -125,17 +124,19 @@ public class WTFSocketSession {
      * 取消发送某条消息
      * 如果消息已被发送，则取消无效
      *
-     * @param msg    需要撤回的消息
+     * @param msg 需要撤回的消息
      */
     public void cancelMsg(WTFSocketMsg msg) {
 
-        WTFSocketMsgWrapper wrapper = msg.getWrapper();
+        WTFSocketMsgWrapper msgWrapper = msg.getWrapper();
 
-        if (waitResponses.contains(wrapper)) {
-            waitResponses.remove(wrapper.getTag());
+        if (waitSend.contains(msgWrapper)) {
+            waitSend.remove(msgWrapper);
+            return;
         }
-        if (waitSendQ.contains(wrapper)) {
-            waitSendQ.remove(wrapper);
+
+        if (waitResponse.contains(msgWrapper)) {
+            waitResponse.remove(msgWrapper.getTag());
         }
     }
 
@@ -171,9 +172,9 @@ public class WTFSocketSession {
         String msgTag = msg.getTag();
 
         // 使用单次响应
-        if (waitResponses.containsKey(msgTag)) {
-            WTFSocketMsgWrapper wrapper = waitResponses.get(msgTag);
-            waitResponses.remove(msgTag);
+        if (waitResponse.containsKey(msgTag)) {
+            WTFSocketMsgWrapper wrapper = waitResponse.get(msgTag);
+            waitResponse.remove(msgTag);
 
             if (wrapper.getHandler().onReceive(this, msg.getMsg())) {
                 return true;
@@ -187,14 +188,19 @@ public class WTFSocketSession {
 
         WTFSocketMsgWrapper msg = e.getMsg();
 
-        // 使用单次响应
-        if (waitResponses.containsKey(msg.getTag())) {
-            WTFSocketMsgWrapper waitMsg = waitResponses.get(msg.getTag());
-            waitResponses.remove(msg.getTag());
+        // 在等待队列中处理
+        if (waitSend.contains(msg)) {
+            waitSend.remove(msg);
+        }
 
-            if (waitMsg.getHandler().onException(msg.getBelong(), msg.getMsg(), e)) {
-                return true;
-            }
+        // 使用单次响应
+        if (waitResponse.containsKey(msg.getTag())) {
+            msg = waitResponse.get(msg.getTag());
+            waitResponse.remove(msg.getTag());
+        }
+
+        if (msg.getHandler().onException(msg.getBelong(), msg.getMsg(), e)) {
+            return true;
         }
         return defaultResponse.onException(msg.getBelong(), msg.getMsg(), e);
 
@@ -203,41 +209,59 @@ public class WTFSocketSession {
     // 超时检查
     void checkTimeout() {
 
-        for (WTFSocketMsgWrapper msg : waitResponses.values()) {
+        WTFSocketException e = null;
 
+        for (WTFSocketMsgWrapper msg : waitSend) {
             if (msg.getTimeout() < System.currentTimeMillis()) {
-                WTFSocketException e = new WTFSocketException("time out");
-                e.setLocation(this.getClass().getName() + "$checkTimeout");
-                e.setMsg(msg);
-                WTFSocketSessionFactory.dispatchException(e);
+                e = new WTFSocketException("send time out").setMsg(msg);
             }
+        }
 
+        for (WTFSocketMsgWrapper msg : waitResponse.values()) {
+            if (msg.getTimeout() < System.currentTimeMillis()) {
+                e = new WTFSocketException("wait time out").setMsg(msg);
+            }
+        }
+
+        if (e != null) {
+            e.setLocation(this.getClass().getName() + "$checkTimeout");
+            WTFSocketSessionFactory.dispatchException(e);
         }
 
     }
 
     // 获取带发送消息队列
-    ConcurrentLinkedQueue<WTFSocketMsgWrapper> getWaitSendQ() {
-        return waitSendQ;
+    ConcurrentLinkedQueue<WTFSocketMsgWrapper> getWaitSend() {
+        return waitSend;
     }
 
     // 清空等待回复消息
     void clearWaitResponses() {
-        waitResponses.clear();
+        waitResponse.clear();
     }
 
     // 清空 id < msgId 的消息的等待
     void clearWaitResponsesBefore(int msgId) {
-        for (String key : waitResponses.keySet()) {
+        for (String key : waitResponse.keySet()) {
             if (Integer.valueOf(key) < msgId) {
-                waitResponses.remove(key);
+                waitResponse.remove(key);
             }
         }
     }
 
     // 判断是否有消息等待发送
-    boolean hasMsg () {
-        return !waitSendQ.isEmpty();
+    synchronized boolean hasMsg() {
+        return !waitSend.isEmpty();
     }
 
+    WTFSocketMsgWrapper getMsg() {
+        WTFSocketMsgWrapper msg = null;
+        if (hasMsg()) {
+            msg = waitSend.poll();
+            if (msg.isNeedResponse()) {
+                waitResponse.put(msg.getTag(), msg);
+            }
+        }
+        return msg;
+    }
 }

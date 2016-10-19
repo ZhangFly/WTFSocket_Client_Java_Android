@@ -53,7 +53,7 @@ class WTFSocketClient implements Runnable {
             }
 
             // 开启超时检查
-            frameSchedule.scheduleAtFixedRate(new WTFSocketCheckTimeoutThread(), 200, 200, TimeUnit.MILLISECONDS);
+            frameSchedule.scheduleAtFixedRate(new WTFSocketCheckTimeoutThread(), 0, 200, TimeUnit.MILLISECONDS);
 
             // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
@@ -61,12 +61,13 @@ class WTFSocketClient implements Runnable {
             logger.info(String.format("socket connected!\nremote address => %s\nlocal address => %s", socket.getRemoteSocketAddress(), socket.getLocalSocketAddress()));
 
             // 开启写线程
-            frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 200, 200, TimeUnit.MILLISECONDS);
+            frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
             // 开启接收监听线程
-            frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 200, 200, TimeUnit.MILLISECONDS);
+            frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
+
             // 如果需要开启心跳包线程
             if (config.isUseHeartbeat()) {
-                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
             }
 
             WTFSocketSessionFactory.setIsAvailable(true);

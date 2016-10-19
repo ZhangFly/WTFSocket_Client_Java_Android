@@ -1,7 +1,10 @@
 package wtf.socket;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.sun.istack.internal.Nullable;
+import com.sun.javafx.beans.annotations.NonNull;
 
 /**
  * Socket通信消息模板
@@ -10,79 +13,145 @@ import com.alibaba.fastjson.annotation.JSONField;
  */
 public class WTFSocketMsg {
 
-    private String from;
-    private String to;
-    @JSONField(serialize = false)
-    private Integer msgId;
-    @JSONField(serialize = false)
-    private Integer msgType;
+    /* 协议必备属性 */
+    @NonNull
+    private String from = "selfId";
+
+    @NonNull
+    private String to = "server";
+
+    @NonNull
+    private Integer msgId = -1;
+
+    @NonNull
+    private Integer msgType = 1;
+
+    /* 协议可选属性 */
+    @Nullable
     private Integer flag;
+
+    @Nullable
     private Integer errCode;
+
+    @Nullable
     private Integer cmd;
+
+    @Nullable
     private JSONArray params;
+
+
+    /* 辅助属性 */
+    @Nullable
     @JSONField(serialize = false)
     private String originalStr;
 
+    @Nullable
     @JSONField(serialize = false)
     private WTFSocketMsgWrapper wrapper;
 
+    /* 屏蔽构造函数 */
+    private WTFSocketMsg() {
+
+    }
+
+    /**
+     * 创建空消息模板
+     *
+     * @return 消息模板
+     */
     public static WTFSocketMsg empty() {
         WTFSocketMsg template = new WTFSocketMsg();
-        template.setMsgType(1);
         return template;
     }
 
-
+    /**
+     * 创建成功消息模板
+     *
+     * @return 消息模板
+     */
     public static WTFSocketMsg success() {
         WTFSocketMsg template = new WTFSocketMsg();
         template.setFlag(1);
-        template.setMsgType(1);
         return template;
     }
 
+    /**
+     * 创建失败消息模板
+     *
+     * @return 消息模板
+     */
     public static WTFSocketMsg failure(int errCode) {
         WTFSocketMsg template = new WTFSocketMsg();
         template.setFlag(0);
         template.setErrCode(errCode);
-        template.setMsgType(1);
         return template;
     }
 
+    /**
+     * 创建心跳包消息模板
+     *
+     * @return 消息模板
+     */
     public static WTFSocketMsg heartbeat() {
         WTFSocketMsg template = new WTFSocketMsg();
         template.setMsgType(0);
         return template;
     }
 
-    private WTFSocketMsg() {
-
-    }
-
+    /**
+     * 获取cmd属性
+     *
+     * @return cmd值
+     */
     public Integer getCmd() {
         return cmd;
     }
 
+    /**
+     * 设置cmd属性
+     *
+     * @return this
+     */
     public WTFSocketMsg setCmd(Integer cmd) {
         this.cmd = cmd;
         return this;
     }
 
-
+    /**
+     * 获取params属性
+     *
+     * @return cmd值
+     */
     public JSONArray getParams() {
         return params;
     }
 
+    /**
+     * 设置params属性
+     *
+     * @return this
+     */
     public WTFSocketMsg setParams(JSONArray params) {
         this.params = params;
         return this;
     }
 
+    /**
+     * 添加一个对象到params属性
+     *
+     * @return this
+     */
     public WTFSocketMsg addParam(Object param) {
         if (params == null) {
             params = new JSONArray();
         }
         params.add(param);
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 
     String getFrom() {

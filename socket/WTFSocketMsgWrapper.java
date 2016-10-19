@@ -1,119 +1,132 @@
 package wtf.socket;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.sun.istack.internal.Nullable;
+import com.sun.javafx.beans.annotations.NonNull;
 
 class WTFSocketMsgWrapper {
 
-    private String from;
-    private String to;
-    private Integer msgId;
-    private Integer msgType;
-    private Integer cmd;
-    private Integer flag;
-    private Integer errCode;
-    private JSONArray params;
+    /* 包装对象 */
+    @NonNull
+    @JSONField(serialize = false)
+    private WTFSocketMsg msg;
 
+    /* 辅助属性 */
+    @NonNull
     @JSONField(serialize = false)
     private WTFSocketSession belong;
+
+    @NonNull
     @JSONField(serialize = false)
     private WTFSocketHandler handler;
-    @JSONField(serialize = false)
-    private String originalStr;
+
+    @Nullable
     @JSONField(serialize = false)
     private Long timeout;
 
+    @NonNull
+    @JSONField(serialize = false)
+    private boolean isNeedResponse = false;
 
     public WTFSocketMsgWrapper() {
-        this(WTFSocketSessionFactory.getSession("Inner"), WTFSocketMsg.empty());
+        this(null, null);
     }
 
     public WTFSocketMsgWrapper(WTFSocketSession belong, WTFSocketMsg msg) {
 
-        // 每个消息必须有处理对象
-        setHandler(new WTFSocketHandler() {});
-        // 每个消息必须属于一个 session
-        setBelong(belong);
-        setMsgId(WTFSocketSessionFactory.getSelfIncrementMsgId());
-        setFlag(msg.getFlag());
-        setCmd(msg.getCmd());
-        setErrCode(msg.getErrCode());
-        setParams(msg.getParams());
-        setMsgType(msg.getMsgType());
+        // msg 不能为空
+        if (msg == null) {
+            msg = WTFSocketMsg.empty();
+        }
+
+        // belong 不能为空
+        if (belong == null) {
+            belong = WTFSocketSessionFactory.getSession("Inner");
+        }
+
+        msg.setFrom(belong.getFrom());
+        msg.setTo(belong.getTo());
+        msg.setMsgId(WTFSocketSessionFactory.getSelfIncrementMsgId());
         msg.setWrapper(this);
 
+        this.msg = msg;
+        this.belong = belong;
+
+        // 每个消息必须有处理对象
+        this.handler = new WTFSocketHandler() {};
     }
 
-
     public String getFrom() {
-        return from;
+        return msg.getFrom();
     }
 
     public WTFSocketMsgWrapper setFrom(String from) {
-        this.from = from;
+        msg.setFrom(from);
         return this;
     }
 
     public String getTo() {
-        return to;
+        return msg.getTo();
     }
 
     public WTFSocketMsgWrapper setTo(String to) {
-        this.to = to;
+        msg.setTo(to);
         return this;
     }
 
     public Integer getMsgId() {
-        return msgId;
+        return msg.getMsgId();
     }
 
     public WTFSocketMsgWrapper setMsgId(Integer msgId) {
-        this.msgId = msgId;
+        msg.setMsgId(msgId);
         return this;
     }
 
     public Integer getMsgType() {
-        return msgType;
+        return msg.getMsgType();
     }
 
     public WTFSocketMsgWrapper setMsgType(Integer msgType) {
-        this.msgType = msgType;
+        msg.setMsgType(msgType);
         return this;
     }
 
     public Integer getCmd() {
-        return cmd;
+        return msg.getCmd();
     }
 
     public WTFSocketMsgWrapper setCmd(Integer cmd) {
-        this.cmd = cmd;
+        msg.setCmd(cmd);
         return this;
     }
 
     public Integer getFlag() {
-        return flag;
+        return msg.getFlag();
     }
 
     public WTFSocketMsgWrapper setFlag(Integer flag) {
-        this.flag = flag;
+        msg.setFlag(flag);
         return this;
     }
 
     public Integer getErrCode() {
-        return errCode;
+        return msg.getErrCode();
     }
 
     public WTFSocketMsgWrapper setErrCode(Integer errCode) {
-        this.errCode = errCode;
+        msg.setErrCode(errCode);
         return this;
     }
 
     public JSONArray getParams() {
-        return params;
+        return msg.getParams();
     }
 
     public WTFSocketMsgWrapper setParams(JSONArray params) {
-        this.params = params;
+        msg.setParams(params);
         return this;
     }
 
@@ -148,33 +161,35 @@ class WTFSocketMsgWrapper {
         return this;
     }
 
+    public WTFSocketMsg getMsg() {
+
+        return msg;
+    }
+
+    public boolean isNeedResponse() {
+        return isNeedResponse;
+    }
+
+    public void setNeedResponse(boolean needResponse) {
+        isNeedResponse = needResponse;
+    }
+
+    public String getOriginalStr() {
+        return msg.getOriginalStr();
+    }
+
+    public WTFSocketMsgWrapper setOriginalStr(String originalStr) {
+        msg.setOriginalStr(originalStr);
+        return this;
+    }
+
     @JSONField(serialize = false)
     public String getTag() {
         return String.valueOf(getMsgId().intValue());
     }
 
-    @JSONField(serialize = false)
-    public WTFSocketMsg getMsg() {
-
-        return WTFSocketMsg.empty()
-                .setFrom(getFrom())
-                .setTo(getTo())
-                .setFlag(getFlag())
-                .setErrCode(getErrCode())
-                .setCmd(getCmd())
-                .setMsgId(getMsgId())
-                .setMsgType(getMsgType())
-                .setParams(getParams())
-                .setOriginalStr(getOriginalStr());
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
-
-    String getOriginalStr() {
-        return originalStr;
-    }
-
-    WTFSocketMsgWrapper setOriginalStr(String originalStr) {
-        this.originalStr = originalStr;
-        return this;
-    }
-
 }

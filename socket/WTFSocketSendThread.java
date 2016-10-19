@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSON;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Queue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class WTFSocketSendThread implements Runnable {
@@ -21,47 +20,40 @@ class WTFSocketSendThread implements Runnable {
     @Override
     public void run() {
 
+        WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper();
 
-            WTFSocketMsgWrapper msg = new WTFSocketMsgWrapper();
-        Socket socket = wtfSocketClient.getSocket();
+        try {
 
-            try {
-
-                if (socket.isClosed()) {
-                    return;
-                }
-
-                if (WTFSocketSessionFactory.SERVER.hasMsg()) {
-                    doWrite(WTFSocketSessionFactory.SERVER, msg);
-                }
-
-                for (WTFSocketSession session : WTFSocketSessionFactory.getSessions()) {
-
-                    if (session.hasMsg()) {
-                        doWrite(session, msg);
-                    }
-                }
-
-            } catch (IOException e) {
-                WTFSocketException exception = new WTFSocketException(e.getMessage());
-                exception.setLocation(this.getClass().getName() + "$run");
-                exception.setMsg(msg);
-
-                WTFSocketSessionFactory.dispatchException(exception);
+            if (wtfSocketClient.getSocket().isClosed()) {
+                return;
             }
+
+            if (WTFSocketSessionFactory.SERVER.hasMsg()) {
+                doWrite(WTFSocketSessionFactory.SERVER, msgWrapper);
+            }
+
+            for (WTFSocketSession session : WTFSocketSessionFactory.getSessions()) {
+                doWrite(session, msgWrapper);
+            }
+
+        } catch (IOException e) {
+            WTFSocketException exception = new WTFSocketException(e.getMessage());
+            exception.setLocation(this.getClass().getName() + "$run");
+            exception.setMsg(msgWrapper);
+
+            WTFSocketSessionFactory.dispatchException(exception);
         }
+
+    }
 
 
     private void doWrite(WTFSocketSession session, WTFSocketMsgWrapper msg) throws IOException {
 
-        Queue<WTFSocketMsgWrapper> msgQ = session.getWaitSendQ();
+        while (session.hasMsg()) {
 
-        while (msgQ.peek() != null) {
-
-            msg = msgQ.poll();
-
+            msg = session.getMsg();
             String msgStr = JSON.toJSONString(msg);
-            if (msg.getMsgType() != null && msg.getMsgType() != 0) {
+            if (msg.getMsgType() != 0) {
                 logger.info(String.format("sendMsg msg from <%s> to <%s>:\nmsg => %s",
                         msg.getFrom(),
                         msg.getTo(),
