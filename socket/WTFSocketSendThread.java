@@ -39,7 +39,7 @@ class WTFSocketSendThread implements Runnable {
 
                 // 服务器会话已优先处理
                 if (session == WTFSocketSessionFactory.SERVER) {
-                    break;
+                    continue;
                 }
 
                 // 检查是否有等待回复的消息超时
