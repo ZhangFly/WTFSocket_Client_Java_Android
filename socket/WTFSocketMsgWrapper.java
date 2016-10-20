@@ -6,16 +6,19 @@ import com.alibaba.fastjson.annotation.JSONField;
 
 class WTFSocketMsgWrapper {
 
+    // 消息级别默认handler
+    private static final WTFSocketHandler DEFAULT_HANDLER = new WTFSocketHandler() {};
+
     /* 包装对象 */
     @JSONField(serialize = false)
     private WTFSocketMsg msg;
 
     /* 辅助属性 */
     @JSONField(serialize = false)
-    private WTFSocketSession belong;
+    private WTFSocketSession belong = WTFSocketSessionFactory.EMPTY;
 
     @JSONField(serialize = false)
-    private WTFSocketHandler handler = new WTFSocketHandler() {};
+    private WTFSocketHandler handler = DEFAULT_HANDLER;
 
     @JSONField(serialize = false)
     private Long timeout = Long.MAX_VALUE;
@@ -34,17 +37,16 @@ class WTFSocketMsgWrapper {
             msg = WTFSocketMsg.empty();
         }
 
-        if (belong == null) {
-            belong = WTFSocketSessionFactory.EMPTY;
+        if (belong != null) {
+            this.belong = belong;
+            msg.setFrom(belong.getFrom());
+            msg.setTo(belong.getTo());
         }
 
-        msg.setFrom(belong.getFrom());
-        msg.setTo(belong.getTo());
         msg.setMsgId(WTFSocketSessionFactory.getSelfIncrementMsgId());
         msg.setWrapper(this);
 
         this.msg = msg;
-        this.belong = belong;
     }
 
     public String getFrom() {
