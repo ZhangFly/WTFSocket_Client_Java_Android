@@ -1,6 +1,5 @@
 package wtf.socket;
 
-
 public abstract class WTFSocketEventListener {
 
     public void onDisconnect() {
@@ -11,7 +10,7 @@ public abstract class WTFSocketEventListener {
 
     }
 
-    public void onNewSession(WTFSocketSession session) {
+    public void onNewSession(WTFSocketSession session, WTFSocketMsg msg) {
 
     }
 }

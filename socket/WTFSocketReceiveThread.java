@@ -11,9 +11,9 @@ class WTFSocketReceiveThread implements Runnable {
 
     private static final Logger logger = Logger.getLogger("socket");
 
-    private WTFSocketBootstrapThread wtfSocketClient;
+    private WTFSocketBootstrap wtfSocketClient;
 
-    WTFSocketReceiveThread(WTFSocketBootstrapThread wtfSocketClient) {
+    WTFSocketReceiveThread(WTFSocketBootstrap wtfSocketClient) {
         this.wtfSocketClient = wtfSocketClient;
     }
 

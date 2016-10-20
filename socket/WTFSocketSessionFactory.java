@@ -28,6 +28,7 @@ public class WTFSocketSessionFactory {
     static WTFSocketSession HEARTBEAT;
 
     // 空会话
+    // 所有无法定位会话对象的消息/异常会被分配到该会话下
     static WTFSocketSession EMPTY;
 
     private static ConcurrentHashMap<String, WTFSocketSession> sessions = new ConcurrentHashMap<>();
@@ -35,7 +36,7 @@ public class WTFSocketSessionFactory {
     private static volatile boolean isAvailable = false;
 
     // socket 客服端
-    private static WTFSocketBootstrapThread socketClient;
+    private static WTFSocketBootstrap socketClient;
 
     // 自增的消息ID
     private static AtomicInteger msgId = new AtomicInteger(0);
@@ -100,14 +101,14 @@ public class WTFSocketSessionFactory {
 
         // 每次复位，主会话将会保留
         // 心跳会话将会重新开启
+        EMPTY = getSession("empty");
         SERVER = getSession("server");
         if (HEARTBEAT != null) {
             HEARTBEAT.close();
         }
-        EMPTY = getSession("empty");
         HEARTBEAT = getSession("heartbeat");
 
-        WTFSocketSessionFactory.socketClient = new WTFSocketBootstrapThread(config);
+        WTFSocketSessionFactory.socketClient = new WTFSocketBootstrap(config);
         socketClient.start();
     }
 
@@ -140,18 +141,8 @@ public class WTFSocketSessionFactory {
      * @return WTFSocketSession
      */
     public static WTFSocketSession getSession(String to) {
-        if (sessions.containsKey(to)) {
-            return sessions.get(to);
-        }
 
-        WTFSocketSession session = new WTFSocketSession(config.getLocalName(), to);
-        sessions.put(to, session);
-        if (!"server".equals(to) && !"empty".equals(to) && !"heartbeat".equals(to))
-            for (WTFSocketEventListener listener : eventListeners) {
-                listener.onNewSession(session);
-            }
-
-        return session;
+        return getSession(to, WTFSocketMsg.empty());
     }
 
     /**
@@ -217,6 +208,23 @@ public class WTFSocketSessionFactory {
         return isAvailable;
     }
 
+    // 获取会话对象内部方法
+    static WTFSocketSession getSession(String to, WTFSocketMsg msg) {
+
+        if (sessions.containsKey(to)) {
+            return sessions.get(to);
+        }
+
+        WTFSocketSession session = new WTFSocketSession(config.getLocalName(), to);
+        sessions.put(to, session);
+        if (!"server".equals(to) && !"empty".equals(to) && !"heartbeat".equals(to))
+            for (WTFSocketEventListener listener : eventListeners) {
+                listener.onNewSession(session, msg);
+            }
+
+        return session;
+    }
+
     // 设置框架就绪
     static void setIsAvailable(boolean isAvailable) {
         WTFSocketSessionFactory.isAvailable = isAvailable;
@@ -246,7 +254,7 @@ public class WTFSocketSessionFactory {
         }
 
         // 处理普通消息
-        WTFSocketSession session = getSession(msgWrapper.getFrom());
+        WTFSocketSession session = getSession(msgWrapper.getFrom(), msgWrapper.getMsg());
 
         if (!session.dispatchMsg(msgWrapper)) {
             if (!defaultResponse.onReceive(session, msgWrapper.getMsg())) {

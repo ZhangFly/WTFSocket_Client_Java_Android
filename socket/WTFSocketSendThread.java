@@ -5,16 +5,15 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
 class WTFSocketSendThread implements Runnable {
 
     private static final Logger logger = Logger.getLogger("socket");
 
-    private WTFSocketBootstrapThread wtfSocketClient;
+    private WTFSocketBootstrap wtfSocketClient;
 
-    WTFSocketSendThread(WTFSocketBootstrapThread socket) {
+    WTFSocketSendThread(WTFSocketBootstrap socket) {
         this.wtfSocketClient = socket;
     }
 
@@ -28,6 +27,7 @@ class WTFSocketSendThread implements Runnable {
             WTFSocketSessionFactory.SERVER.checkResponseTimeout();
             // 检查是否有等待发送的消息超时
             WTFSocketSessionFactory.SERVER.checkSendTimeout();
+
             if (WTFSocketSessionFactory.SERVER.hasWaitSendMsg()) {
                 // 发送可用消息超时
                 doWrite(WTFSocketSessionFactory.SERVER);
@@ -60,7 +60,7 @@ class WTFSocketSendThread implements Runnable {
 
         Socket socket = wtfSocketClient.getSocket();
         // 等待发送的消息
-        ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitSendMsg = session.getWaitSendMsg();
+        ConcurrentHashMap<String, WTFSocketMsgWrapper> waitSendMsg = session.getWaitSendMsg();
 
         // 等待回复的消息
         ConcurrentHashMap<String, WTFSocketMsgWrapper> waitResponseMsg = session.getWaitResponseMsg();
@@ -68,7 +68,7 @@ class WTFSocketSendThread implements Runnable {
         // 需要从发送队列中移除的消息
         List<WTFSocketMsgWrapper> sentMsg = new ArrayList<>();
 
-        for (WTFSocketMsgWrapper msgWrapper : waitSendMsg) {
+        for (WTFSocketMsgWrapper msgWrapper : waitSendMsg.values()) {
 
             if (socket.isClosed() || !socket.isConnected()) {
 
@@ -82,12 +82,12 @@ class WTFSocketSendThread implements Runnable {
                         msgWrapper));
             }
 
-            socket.getOutputStream().write((msgWrapper + WTFSocketBootstrapThread.EOT).getBytes());
+            socket.getOutputStream().write((msgWrapper + WTFSocketBootstrap.EOT).getBytes());
             sentMsg.add(msgWrapper);
         }
 
         for (WTFSocketMsgWrapper msgWrapper : sentMsg) {
-            waitSendMsg.remove(msgWrapper);
+            waitSendMsg.remove(msgWrapper.getTag());
             if (msgWrapper.isNeedResponse()) {
                 waitResponseMsg.put(msgWrapper.getTag(), msgWrapper);
             }

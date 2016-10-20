@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 /**
  * Socket通信客户端
  */
-class WTFSocketBootstrapThread implements Runnable {
+class WTFSocketBootstrap implements Runnable {
 
     private static Logger logger = Logger.getLogger("socket");
 
@@ -31,7 +31,7 @@ class WTFSocketBootstrapThread implements Runnable {
     private StringBuffer buffer = new StringBuffer();
 
 
-    WTFSocketBootstrapThread(WTFSocketConfig config) {
+    WTFSocketBootstrap(WTFSocketConfig config) {
         this.config = config;
     }
 
@@ -106,7 +106,7 @@ class WTFSocketBootstrapThread implements Runnable {
         buffer.append(data);
 
         while (true) {
-            int index = buffer.indexOf(WTFSocketBootstrapThread.EOT);
+            int index = buffer.indexOf(WTFSocketBootstrap.EOT);
             if (index == -1) {
                 break;
             }

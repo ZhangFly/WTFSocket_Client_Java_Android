@@ -3,7 +3,6 @@ package wtf.socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.sun.javafx.beans.annotations.NonNull;
 
 class WTFSocketMsgWrapper {
 
