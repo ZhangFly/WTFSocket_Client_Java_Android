@@ -3,8 +3,6 @@ package wtf.socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.sun.istack.internal.Nullable;
-import com.sun.javafx.beans.annotations.NonNull;
 
 /**
  * Socket通信消息模板

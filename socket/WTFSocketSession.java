@@ -3,7 +3,6 @@ package wtf.socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 /**
  * socket会话
@@ -13,7 +12,6 @@ import java.util.logging.Logger;
  */
 public class WTFSocketSession {
 
-    private static Logger logger = Logger.getLogger("socket");
 
     // 自身名称
     private String from;

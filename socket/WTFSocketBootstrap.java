@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 class WTFSocketBootstrap implements Runnable {
 
-    private static Logger logger = Logger.getLogger("socket");
+    // private static Logger logger = Logger.getLogger("socket");
 
     // 传输终止符号
     static final String EOT = "\r\n";
@@ -67,7 +67,7 @@ class WTFSocketBootstrap implements Runnable {
             // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
             socket.setKeepAlive(true);
-            logger.info(String.format("socket connected!\nremote address => %s\nlocal address => %s", socket.getRemoteSocketAddress(), socket.getLocalSocketAddress()));
+            WTFSocketLogUtils.info(String.format("socket connected!\nremote address => %s\nlocal address => %s", socket.getRemoteSocketAddress(), socket.getLocalSocketAddress()));
 
             // 更新框架状态
             WTFSocketSessionFactory.setIsAvailable(true);

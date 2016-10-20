@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.*;
 
 /**
  * socket会话工厂
@@ -13,8 +12,6 @@ import java.util.logging.*;
  * 会话工厂初始化后会自动创建一个连接到服务器的会话 SERVER
  */
 public class WTFSocketSessionFactory {
-
-    private static Logger logger = Logger.getLogger("socket");
 
     // 本机配置
     private static WTFSocketConfig config;
@@ -50,7 +47,7 @@ public class WTFSocketSessionFactory {
     private static WTFSocketHandler printHandler = new WTFSocketHandler() {
         @Override
         public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
-            logger.info(String.format(
+            WTFSocketLogUtils.info(String.format(
                     "printHandler: receive msg from <%s> to <%s>:\r\nmsg => %s",
                     session.getFrom(),
                     session.getTo(),
@@ -61,7 +58,7 @@ public class WTFSocketSessionFactory {
 
         @Override
         public boolean onException(WTFSocketSession session, WTFSocketMsg msg, WTFSocketException e) {
-            logger.log(Level.WARNING, String.format(
+            WTFSocketLogUtils.err(String.format(
                     "printHandler: occur exception from <%s> to <%s>:\r\nmsg => %s\r\n%s",
                     session.getFrom(),
                     session.getTo(),
@@ -80,22 +77,22 @@ public class WTFSocketSessionFactory {
     public static void init(WTFSocketConfig config) {
 
         if (config == null) {
-            logger.log(Level.WARNING, "config can not be null!");
+            WTFSocketLogUtils.err("config can not be null!");
             return;
         }
 
         if (config.getLocalName() == null) {
-            logger.log(Level.WARNING, "config.localName can not be null!");
+            WTFSocketLogUtils.err("config.localName can not be null!");
             return;
         }
 
         if (config.getIp() == null) {
-            logger.log(Level.WARNING, "config.ip can not be null!");
+            WTFSocketLogUtils.err("config.ip can not be null!");
             return;
         }
 
         if (config.getPort() == 0) {
-            logger.log(Level.WARNING, "config.port can not be 0!");
+            WTFSocketLogUtils.err("config.port can not be 0!");
             return;
         }
 
@@ -124,7 +121,7 @@ public class WTFSocketSessionFactory {
             for (WTFSocketEventListener listener : eventListeners) {
                 listener.onDisconnect();
             }
-            logger.info("socket disconnect");
+            WTFSocketLogUtils.info("socket disconnect");
         }
     }
 

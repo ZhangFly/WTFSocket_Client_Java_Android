@@ -1,10 +1,7 @@
 package wtf.socket;
 
-import java.util.logging.Logger;
-
 class WTFSocketHeartbeatThread implements Runnable {
 
-    private static Logger logger = Logger.getLogger("socket");
     private int breakTime;
 
     WTFSocketHeartbeatThread(int breakTime) {

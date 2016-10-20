@@ -5,11 +5,9 @@ import com.alibaba.fastjson.JSONException;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.logging.Logger;
 
 class WTFSocketReceiveThread implements Runnable {
 
-    private static final Logger logger = Logger.getLogger("socket");
 
     private WTFSocketBootstrap wtfSocketClient;
 
@@ -61,7 +59,7 @@ class WTFSocketReceiveThread implements Runnable {
                 }
 
                 if (msgWrapper.getMsgType() == 1) {
-                    logger.info(String.format(
+                    WTFSocketLogUtils.info(String.format(
                             "received msg from <%s> to <%s>:\r\nmsg => %s",
                             msgWrapper.getFrom(),
                             msgWrapper.getTo(),

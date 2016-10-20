@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 
 class WTFSocketSendThread implements Runnable {
 
-    private static final Logger logger = Logger.getLogger("socket");
+    // private static final Logger logger = Logger.getLogger("socket");
 
     private WTFSocketBootstrap wtfSocketClient;
 
@@ -74,7 +74,7 @@ class WTFSocketSendThread implements Runnable {
                 msgWrapper = wrapper;
 
                 if (wrapper.getMsgType() != 0) {
-                    logger.info(String.format(
+                    WTFSocketLogUtils.info(String.format(
                             "send msg from <%s> to <%s>:\r\nmsg => %s",
                             wrapper.getFrom(),
                             wrapper.getTo(),
