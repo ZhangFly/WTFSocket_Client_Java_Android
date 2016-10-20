@@ -28,7 +28,7 @@
 
 [`fastjson-1.2.9.jar`](http://mvnrepository.com/artifact/com.alibaba/fastjson/1.2.9)
 
-**Download**
+**Document**
 
-[`document`](https://zoutstanding.gitbooks.io/wtfsocket/content/)
+[`gitbook`](https://zoutstanding.gitbooks.io/wtfsocket/content/)
 
