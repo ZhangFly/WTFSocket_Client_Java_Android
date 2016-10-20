@@ -10,7 +10,7 @@ import java.util.logging.*;
 /**
  * socket会话工厂
  * 负责创建会话和分发消息
- * 会话工厂初始化后会自动创建一个连接到服务器的会话  SERVER
+ * 会话工厂初始化后会自动创建一个连接到服务器的会话 SERVER
  */
 public class WTFSocketSessionFactory {
 
@@ -43,7 +43,8 @@ public class WTFSocketSessionFactory {
     private static List<WTFSocketEventListener> eventListeners = new ArrayList<>();
 
     // 默认响应方法
-    private static WTFSocketHandler defaultResponse = new WTFSocketHandler() {};
+    private static WTFSocketHandler defaultResponse = new WTFSocketHandler() {
+    };
 
     // 打印响应
     private static WTFSocketHandler printHandler = new WTFSocketHandler() {
@@ -117,10 +118,13 @@ public class WTFSocketSessionFactory {
      * 反初始化
      */
     public static void deInit() {
-        socketClient.close();
-        isAvailable = false;
-        for (WTFSocketEventListener listener : eventListeners) {
-            listener.onDisconnect();
+        if (isAvailable) {
+            socketClient.close();
+            isAvailable = false;
+            for (WTFSocketEventListener listener : eventListeners) {
+                listener.onDisconnect();
+            }
+            logger.info("socket disconnect");
         }
     }
 
