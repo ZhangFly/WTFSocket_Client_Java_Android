@@ -163,15 +163,6 @@ class WTFSocketMsgWrapper {
         isNeedResponse = needResponse;
     }
 
-    public String getOriginalStr() {
-        return msg.getOriginalStr();
-    }
-
-    public WTFSocketMsgWrapper setOriginalStr(String originalStr) {
-        msg.setOriginalStr(originalStr);
-        return this;
-    }
-
     @JSONField(serialize = false)
     public String getTag() {
         return String.valueOf(getMsgId().intValue());

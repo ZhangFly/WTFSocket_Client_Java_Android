@@ -21,6 +21,7 @@ class WTFSocketReceiveThread implements Runnable {
     public void run() {
 
         WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper();
+        String data = null;
 
         try {
             Socket socket = wtfSocketClient.getSocket();
@@ -37,28 +38,45 @@ class WTFSocketReceiveThread implements Runnable {
 
             byte bytes[] = new byte[toReadLen];
             int readLen = socket.getInputStream().read(bytes);
-            msgWrapper.setOriginalStr(new String(bytes, 0, readLen));
+            data = new String(bytes, 0, readLen);
 
-            for (String packet : wtfSocketClient.parseAndGetPackets(msgWrapper.getOriginalStr())) {
+            for (String packet : wtfSocketClient.parseAndGetPackets(data)) {
 
                 msgWrapper = JSON.parseObject(packet, WTFSocketMsgWrapper.class);
 
-                if (msgWrapper.getFrom() == null || msgWrapper.getTo() == null || msgWrapper.getMsgId() == null || msgWrapper.getMsgType() == null) {
-                    throw new IOException("protocol err!");
+                if (msgWrapper.getFrom() == null ) {
+                    throw new IOException("protocol err => lack <from>");
+                }
+
+                if (msgWrapper.getTo() == null) {
+                    throw new IOException("protocol err => lack <to>");
+                }
+
+                if (msgWrapper.getMsgId() == null) {
+                    throw new IOException("protocol err => lack <msgId>");
+                }
+
+                if (msgWrapper.getMsgType() == null) {
+                    throw new IOException("protocol err => lack <msgType>");
                 }
 
                 if (msgWrapper.getMsgType() == 1) {
-                    logger.info(String.format("received msg from <%s> to <%s>:\nmsg => %s",
+                    logger.info(String.format(
+                            "received msg from <%s> to <%s>:\r\nmsg => %s",
                             msgWrapper.getFrom(),
                             msgWrapper.getTo(),
-                            msgWrapper));
+                            msgWrapper
+                    ));
                 }
                 WTFSocketSessionFactory.dispatchMsg(msgWrapper);
             }
 
         } catch (IOException | JSONException e) {
             wtfSocketClient.clearBuffer();
-            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()), msgWrapper);
+            WTFSocketSessionFactory.dispatchException(
+                    new WTFSocketException(e.getMessage()).setAddition(data),
+                    msgWrapper
+            );
         }
     }
 }

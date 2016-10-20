@@ -32,10 +32,6 @@ public class WTFSocketMsg {
     private JSONArray params;
 
 
-    /* 辅助属性 */
-    @JSONField(serialize = false)
-    private String originalStr;
-
     @JSONField(serialize = false)
     private WTFSocketMsgWrapper wrapper;
 
@@ -195,15 +191,6 @@ public class WTFSocketMsg {
 
     WTFSocketMsg setMsgType(Integer msgType) {
         this.msgType = msgType;
-        return this;
-    }
-
-    String getOriginalStr() {
-        return originalStr;
-    }
-
-    WTFSocketMsg setOriginalStr(String originalStr) {
-        this.originalStr = originalStr;
         return this;
     }
 

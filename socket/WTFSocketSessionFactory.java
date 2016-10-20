@@ -1,7 +1,5 @@
 package wtf.socket;
 
-import com.alibaba.fastjson.JSON;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,21 +49,24 @@ public class WTFSocketSessionFactory {
     private static WTFSocketHandler printHandler = new WTFSocketHandler() {
         @Override
         public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
-            logger.info(String.format("printHandler: receive msg from <%s> to <%s>:\nmsg => %s",
+            logger.info(String.format(
+                    "printHandler: receive msg from <%s> to <%s>:\r\nmsg => %s",
                     session.getFrom(),
                     session.getTo(),
-                    JSON.toJSONString(msg)));
+                    msg
+            ));
             return true;
         }
 
         @Override
         public boolean onException(WTFSocketSession session, WTFSocketMsg msg, WTFSocketException e) {
-            logger.log(Level.WARNING, String.format("printHandler: occur exception from <%s> to <%s>:\noriginalStr => %s\nmsg => %s\n%s",
+            logger.log(Level.WARNING, String.format(
+                    "printHandler: occur exception from <%s> to <%s>:\r\nmsg => %s\r\n%s",
                     session.getFrom(),
                     session.getTo(),
-                    msg.getOriginalStr(),
                     msg,
-                    e.getMessage()));
+                    e
+            ));
             return true;
         }
     };

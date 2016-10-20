@@ -5,23 +5,44 @@ package wtf.socket;
  */
 public class WTFSocketException extends Exception{
 
-    private String msg;
+    private StringBuffer format;
+
+    private String addition;
 
     WTFSocketException(String msg) {
 
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
-        int lineNo = element.getLineNumber();
-        this.msg = String.format(
-                "where => %s$%s\ncause => %s",
-                element.getClassName(),
-                element.getMethodName(),
-                msg);
+
+        format = new StringBuffer()
+                .append("where => ")
+                .append(element.getClassName())
+                .append("$")
+                .append(element.getMethodName())
+                .append("\r\ncause => ")
+                .append(msg);
 
     }
 
     @Override
     public String getMessage() {
-        return msg;
+        if (addition != null) {
+            format.append("\r\naddition => data: ")
+                    .append(addition);
+        }
+        return format.toString();
     }
 
+    @Override
+    public String toString() {
+        return getMessage();
+    }
+
+    public String getAddition() {
+        return addition;
+    }
+
+    public WTFSocketException setAddition(String addition) {
+        this.addition = addition;
+        return this;
+    }
 }
