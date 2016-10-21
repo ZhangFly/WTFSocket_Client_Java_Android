@@ -70,10 +70,7 @@ class WTFSocketBootstrap implements Runnable {
                 frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
             }
 
-            // 通知所有监听者框架已就绪
-            for (WTFSocketEventListener listener : WTFSocketSessionFactory.getEventListeners()) {
-                listener.onConnect();
-            }
+            WTFSocketSessionFactory.notifyEventListeners(WTFSocketEventType.CONNECT);
 
         } catch (IOException e) {
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));

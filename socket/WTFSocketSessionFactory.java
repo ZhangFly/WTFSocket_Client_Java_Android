@@ -1,5 +1,7 @@
 package wtf.socket;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -115,24 +117,16 @@ public class WTFSocketSessionFactory {
 
         if (isAvailable) {
 
-            // 关闭心跳包会话
-            HEARTBEAT.close();
-            HEARTBEAT = getSession("heartbeat");
             // 关闭socket客户端
             socketClient.close();
             // 设置状态到不可用
             isAvailable = false;
 
-            // 强制触发所有超时事件
             for (WTFSocketSession session : sessions.values()) {
-                session.triggerAllWaitResponseMsgTimeout();
-                session.triggerAllWaitSendMsgTimeout();
+                session.close();
             }
 
-            // 通知监听者
-            for (WTFSocketEventListener listener : eventListeners) {
-                listener.onDisconnect();
-            }
+            notifyEventListeners(WTFSocketEventType.DISCONNECT);
 
             WTFSocketLogUtils.info("socket disconnect");
         }
@@ -166,10 +160,8 @@ public class WTFSocketSessionFactory {
      * @param session 会话对象
      */
     public static void closeSession(WTFSocketSession session) {
-        if (sessions.containsKey(session.getTo())) {
-            sessions.remove(session.getTo());
-            session.clearWaitResponseQ();
-            session.clearWaitSendMsgQ();
+        if (session != null) {
+            session.close();
         }
     }
 
@@ -217,6 +209,15 @@ public class WTFSocketSessionFactory {
     }
 
     /**
+     * 清空所有事件监听者
+     *
+     * @param listener 事件监听者
+     */
+    public static void clearEventListener(WTFSocketEventListener listener) {
+        eventListeners.clear();
+    }
+
+    /**
      * 框架是否就绪
      *
      * @return true 可用，false 不可用
@@ -235,10 +236,12 @@ public class WTFSocketSessionFactory {
         WTFSocketSession session = new WTFSocketSession(config.getLocalName(), to);
         sessions.put(to, session);
         if (!"server".equals(to) && !"empty".equals(to) && !"heartbeat".equals(to))
-            for (WTFSocketEventListener listener : eventListeners) {
-                listener.onNewSession(session, msg);
-            }
 
+        if (!StringUtils.equals("server", to)
+                && StringUtils.equals("empty", to)
+                && StringUtils.equals("heartbeat", to)) {
+            notifyEventListeners(WTFSocketEventType.NEW_SESSION, session, msg);
+        }
         return session;
     }
 
@@ -255,11 +258,6 @@ public class WTFSocketSessionFactory {
     // 获取自增的消息ID
     static int getSelfIncrementMsgId() {
         return msgId.getAndAdd(1);
-    }
-
-    // 获取心跳监听者
-    static List<WTFSocketEventListener> getEventListeners() {
-        return eventListeners;
     }
 
     // 消息派发
@@ -283,6 +281,11 @@ public class WTFSocketSessionFactory {
     }
 
     // 异常派发
+    static boolean dispatchException(WTFSocketException e) {
+        return dispatchException(e, null);
+    }
+
+    // 异常派发
     static boolean dispatchException(WTFSocketException e, WTFSocketMsgWrapper msgWrapper) {
 
         if (msgWrapper == null) {
@@ -303,10 +306,33 @@ public class WTFSocketSessionFactory {
         return true;
     }
 
-    // 异常派发
-    static boolean dispatchException(WTFSocketException e) {
-
-        return dispatchException(e, null);
+    // 从注册表中将 session 移除
+    static void unRegisterSession(WTFSocketSession session) {
+        if (sessions.contains(session)) {
+            sessions.remove(session.getTo());
+        }
     }
 
+    // 通知监听者
+    static void notifyEventListeners(WTFSocketEventType type, Object... params) {
+
+        for (WTFSocketEventListener listener : eventListeners) {
+
+            switch (type) {
+                case CONNECT:
+                    listener.onConnect();
+                    break;
+                case DISCONNECT:
+                    listener.onDisconnect();
+                    break;
+                case NEW_SESSION:
+                    listener.onNewSession((WTFSocketSession) params[0], (WTFSocketMsg) params[1]);
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+    }
 }

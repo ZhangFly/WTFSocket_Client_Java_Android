@@ -177,7 +177,9 @@ public class WTFSocketSession {
      * 关闭会话
      */
     public void close() {
-        WTFSocketSessionFactory.closeSession(this);
+        this.clearWaitResponseQ(true);
+        this.clearWaitSendMsgQ(true);
+        WTFSocketSessionFactory.unRegisterSession(this);
     }
 
     // 派发消息
@@ -212,30 +214,6 @@ public class WTFSocketSession {
 
     }
 
-    // 清空等待回复队列
-    void clearWaitResponseQ() {
-        waitResponseMsgQ.clear();
-    }
-
-    // 清空等待发送队列
-    void clearWaitSendMsgQ() {
-        waitSendMsgQ.clear();
-    }
-
-    // 清空 id < msgId 的消息的等待
-    void removeWaitResponseMsgBefore(int msgId) {
-
-        int len = waitResponseMsgQ.size();
-
-        for (int i = 0; i < len; i++) {
-            WTFSocketMsgWrapper wrapper = waitResponseMsgQ.poll();
-
-            if (Integer.valueOf(wrapper.getTag()) > msgId) {
-                waitResponseMsgQ.add(wrapper);
-            }
-        }
-    }
-
     // 检查是否有等待回复超时
     void checkResponseMsgTimeout() {
 
@@ -263,6 +241,7 @@ public class WTFSocketSession {
     }
 
     // 获取下一个等待发送的消息
+    // 消息一旦获取将会被移除等待发送队列
     // 如果没有消息了则返回空
     WTFSocketMsgWrapper nextWaitSendMsg() {
 
@@ -287,29 +266,73 @@ public class WTFSocketSession {
 
     // 回滚一条待发送消息
     void rollbackSendMsg(WTFSocketMsgWrapper msgWrapper) {
+        if (msgWrapper.isNeedResponse()) {
+            waitResponseMsgQ.remove(msgWrapper);
+        }
         waitSendMsgQ.add(msgWrapper);
     }
 
 
-    void triggerAllWaitResponseMsgTimeout() {
+    // 清空等待回复队列
+    void clearWaitResponseQ() {
+        clearWaitResponseQ(false);
+    }
 
+    // 清空等待回复队列
+    void clearWaitResponseQ(boolean isTrigger) {
+        if (isTrigger) {
+            triggerAllWaitResponseMsgTimeout();
+        }else {
+            waitResponseMsgQ.clear();
+        }
+    }
+
+    // 清空等待发送队列
+    void clearWaitSendMsgQ() {
+        clearWaitSendMsgQ(false);
+    }
+
+    // 清空等待发送队列
+    void clearWaitSendMsgQ(boolean isTrigger) {
+        if (isTrigger) {
+            triggerAllWaitSendMsgTimeout();
+        }else {
+            waitSendMsgQ.clear();
+        }
+    }
+
+    // 清空 id < msgId 的消息的等待
+    // 因为 msgId 是时间递增的
+    // 所有可用认为是清空某天消息之前的消息
+    void removeWaitResponseMsgBefore(int msgId) {
+
+        int len = waitResponseMsgQ.size();
+
+        for (int i = 0; i < len; i++) {
+            WTFSocketMsgWrapper wrapper = waitResponseMsgQ.poll();
+
+            if (Integer.valueOf(wrapper.getTag()) > msgId) {
+                waitResponseMsgQ.add(wrapper);
+            }
+        }
+    }
+
+    // 触发等待回复队列中所有消息的timeout事件
+    private void triggerAllWaitResponseMsgTimeout() {
         triggerAllWaitTimeout(waitResponseMsgQ);
-
     }
 
-    void triggerAllWaitSendMsgTimeout() {
-
+    // 触发等待发送队列中所有消息的timeout事件
+    private void triggerAllWaitSendMsgTimeout() {
         triggerAllWaitTimeout(waitSendMsgQ);
-
     }
 
+    // 触发队列中所有消息的timeout事件
     private void triggerAllWaitTimeout(ConcurrentLinkedQueue<WTFSocketMsgWrapper> msgQ) {
-
-        for (int i = 0; i < msgQ.size(); i++) {
-            WTFSocketMsgWrapper wrapper = msgQ.poll();
+        while(!msgQ.isEmpty()) {
             WTFSocketSessionFactory.dispatchException(
                     new WTFSocketException("wait response timed out"),
-                    wrapper);
+                    msgQ.poll());
         }
     }
 }
