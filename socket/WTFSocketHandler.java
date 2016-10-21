@@ -1,13 +1,10 @@
 package wtf.socket;
 
-import java.util.logging.Logger;
 
 /**
  * socket响应
  */
 public abstract class WTFSocketHandler {
-
-    private static final Logger logger = Logger.getLogger("socket");
 
     /**
      * 收到消息

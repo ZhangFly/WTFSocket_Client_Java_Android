@@ -6,14 +6,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
 
 /**
  * Socket通信客户端
  */
 class WTFSocketBootstrap implements Runnable {
-
-    // private static Logger logger = Logger.getLogger("socket");
 
     // 传输终止符号
     static final String EOT = "\r\n";
