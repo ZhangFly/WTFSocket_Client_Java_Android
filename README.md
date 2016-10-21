@@ -65,7 +65,7 @@ session.sendMsg(WTFSocketMsg.empty());
 
 **Dependences**
 
-[`fastjson-1.2.9.jar`](http://mvnrepository.com/artifact/com.alibaba/fastjson/1.2.9)
+[`fastjson-1.2.9`](http://mvnrepository.com/artifact/com.alibaba/fastjson/1.2.9)
 
 [`commons-lang-2.6`](http://mvnrepository.com/artifact/commons-lang/commons-lang/2.6)
 
