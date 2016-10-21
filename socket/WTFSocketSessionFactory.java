@@ -102,9 +102,6 @@ public class WTFSocketSessionFactory {
         // 心跳会话将会重新开启
         EMPTY = getSession("empty");
         SERVER = getSession("server");
-        if (HEARTBEAT != null) {
-            HEARTBEAT.close();
-        }
         HEARTBEAT = getSession("heartbeat");
 
         WTFSocketSessionFactory.socketClient = new WTFSocketBootstrap(config);
@@ -115,12 +112,28 @@ public class WTFSocketSessionFactory {
      * 反初始化
      */
     public static void deInit() {
+
         if (isAvailable) {
+
+            // 关闭心跳包会话
+            HEARTBEAT.close();
+            HEARTBEAT = getSession("heartbeat");
+            // 关闭socket客户端
             socketClient.close();
+            // 设置状态到不可用
             isAvailable = false;
+
+            // 强制触发所有超时事件
+            for (WTFSocketSession session : sessions.values()) {
+                session.triggerAllWaitResponseMsgTimeout();
+                session.triggerAllWaitSendMsgTimeout();
+            }
+
+            // 通知监听者
             for (WTFSocketEventListener listener : eventListeners) {
                 listener.onDisconnect();
             }
+
             WTFSocketLogUtils.info("socket disconnect");
         }
     }
@@ -155,6 +168,8 @@ public class WTFSocketSessionFactory {
     public static void closeSession(WTFSocketSession session) {
         if (sessions.containsKey(session.getTo())) {
             sessions.remove(session.getTo());
+            session.clearWaitResponseQ();
+            session.clearWaitSendMsgQ();
         }
     }
 

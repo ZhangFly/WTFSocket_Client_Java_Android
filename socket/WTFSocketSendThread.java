@@ -15,7 +15,7 @@ class WTFSocketSendThread implements Runnable {
     public void run() {
 
         // 检查是否有等待回复的消息超时
-        WTFSocketSessionFactory.SERVER.checkResponseTimeout();
+        WTFSocketSessionFactory.SERVER.checkResponseMsgTimeout();
 
         if (WTFSocketSessionFactory.SERVER.hasWaitSendMsg()) {
             doWrite(WTFSocketSessionFactory.SERVER);
@@ -29,7 +29,7 @@ class WTFSocketSendThread implements Runnable {
             }
 
             // 检查是否有等待回复的消息超时
-            session.checkResponseTimeout();
+            session.checkResponseMsgTimeout();
             if (session.hasWaitSendMsg()) {
                 doWrite(session);
             }
@@ -56,16 +56,15 @@ class WTFSocketSendThread implements Runnable {
                         ));
                     }
                     socket.getOutputStream().write((msgWrapper + WTFSocketBootstrap.EOT).getBytes());
-                    session.successSentMsg(msgWrapper);
                 }else{
-                    session.failureSentMsg(msgWrapper);
+                    session.rollbackSendMsg(msgWrapper);
                 }
 
                 msgWrapper = session.nextWaitSendMsg();
             }
 
         } catch (IOException e) {
-            session.failureSentMsg(msgWrapper);
+            session.rollbackSendMsg(msgWrapper);
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()), msgWrapper);
         }
     }

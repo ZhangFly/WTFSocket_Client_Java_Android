@@ -22,7 +22,7 @@ class WTFSocketBootstrap implements Runnable {
     private Socket socket;
 
     // 框架轮询器
-    private ScheduledExecutorService frameSchedule = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService frameSchedule = Executors.newSingleThreadScheduledExecutor();
 
     // 缓冲器
     private StringBuffer buffer = new StringBuffer();
@@ -53,13 +53,6 @@ class WTFSocketBootstrap implements Runnable {
             // 开启写线程
             // 写线程同时负责检查消息是否超时
             frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
-            // 开启接收监听线程
-            frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
-
-            // 如果需要开启心跳包线程
-            if (config.isUseHeartbeat()) {
-                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
-            }
 
             // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
@@ -68,6 +61,14 @@ class WTFSocketBootstrap implements Runnable {
 
             // 更新框架状态
             WTFSocketSessionFactory.setIsAvailable(true);
+
+            // 开启接收监听线程
+            frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
+
+            // 如果需要开启心跳包线程
+            if (config.isUseHeartbeat()) {
+                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+            }
 
             // 通知所有监听者框架已就绪
             for (WTFSocketEventListener listener : WTFSocketSessionFactory.getEventListeners()) {
@@ -87,11 +88,11 @@ class WTFSocketBootstrap implements Runnable {
     // 关闭客户端
     void close() {
         try {
-            // 关闭线程池
-            frameSchedule.shutdown();
             // 关闭socket连接
             socket.close();
-        } catch (IOException e) {
+            // 关闭线程池
+            frameSchedule.shutdown();
+        } catch (Exception e) {
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
         }
     }

@@ -1,8 +1,7 @@
 package wtf.socket;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang.StringUtils;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -13,7 +12,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class WTFSocketSession {
 
-    private static final WTFSocketHandler DEFAULT_RESPONSE = new WTFSocketHandler() {};
+    private static final WTFSocketHandler DEFAULT_RESPONSE = new WTFSocketHandler() {
+    };
 
     // 自身名称
     private String from;
@@ -25,10 +25,10 @@ public class WTFSocketSession {
     private WTFSocketHandler defaultResponse = DEFAULT_RESPONSE;
 
     // 等待回复消息列表
-    private ConcurrentHashMap<String, WTFSocketMsgWrapper> waitResponseMsgs = new ConcurrentHashMap<>();
+    private ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitResponseMsgQ = new ConcurrentLinkedQueue<>();
 
     // 等待发送信息列表
-    private ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitSendMsgs = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitSendMsgQ = new ConcurrentLinkedQueue<>();
 
     WTFSocketSession(String from, String to) {
         this.from = from;
@@ -74,7 +74,7 @@ public class WTFSocketSession {
      * 不接受回复
      * 在超时后自动自动删除
      *
-     * @param msg 消息对象
+     * @param msg     消息对象
      * @param timeout 超时时间，单位ms，不能低于500ms
      */
     public void sendMsg(WTFSocketMsg msg, int timeout) {
@@ -119,7 +119,7 @@ public class WTFSocketSession {
             msgWrapper.setNeedResponse(true);
         }
 
-        waitSendMsgs.add(msgWrapper);
+        waitSendMsgQ.add(msgWrapper);
     }
 
     /**
@@ -131,7 +131,7 @@ public class WTFSocketSession {
      */
     public void replyMsg(WTFSocketMsg reply, WTFSocketMsg original) {
         WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper(this, reply).setMsgId(original.getMsgId());
-        waitSendMsgs.add(msgWrapper);
+        waitSendMsgQ.add(msgWrapper);
     }
 
     /**
@@ -144,13 +144,13 @@ public class WTFSocketSession {
 
         WTFSocketMsgWrapper msgWrapper = msg.getWrapper();
 
-        if (waitSendMsgs.contains(msgWrapper)) {
-            waitSendMsgs.remove(msgWrapper);
+        if (waitSendMsgQ.contains(msgWrapper)) {
+            waitSendMsgQ.remove(msgWrapper);
             return;
         }
 
-        if (waitResponseMsgs.contains(msgWrapper)) {
-            waitResponseMsgs.remove(msgWrapper.getTag());
+        if (waitResponseMsgQ.contains(msgWrapper)) {
+            waitResponseMsgQ.remove(msgWrapper.getTag());
         }
     }
 
@@ -184,15 +184,17 @@ public class WTFSocketSession {
     boolean dispatchMsg(WTFSocketMsgWrapper msgWrapper) {
 
         String msgTag = msgWrapper.getTag();
+        int len = waitResponseMsgQ.size();
 
-        // 使用单次响应
-        if (waitResponseMsgs.containsKey(msgTag)) {
+        for (int i = 0; i < len; i++) {
+            WTFSocketMsgWrapper wrapper = waitResponseMsgQ.poll();
 
-            WTFSocketMsgWrapper waitResponseMsgWrapper = waitResponseMsgs.get(msgTag);
-            waitResponseMsgs.remove(msgTag);
-
-            if (waitResponseMsgWrapper.getHandler().onReceive(this, msgWrapper.getMsg())) {
-                return true;
+            if (StringUtils.equals(wrapper.getTag(), msgTag)) {
+                if (wrapper.getHandler().onReceive(this, msgWrapper.getMsg())) {
+                    return true;
+                }
+            } else {
+                waitResponseMsgQ.add(wrapper);
             }
         }
 
@@ -210,46 +212,54 @@ public class WTFSocketSession {
 
     }
 
-    // 清空等待回复消息
-    void clearWaitResponseMsg() {
-        waitResponseMsgs.clear();
+    // 清空等待回复队列
+    void clearWaitResponseQ() {
+        waitResponseMsgQ.clear();
+    }
+
+    // 清空等待发送队列
+    void clearWaitSendMsgQ() {
+        waitSendMsgQ.clear();
     }
 
     // 清空 id < msgId 的消息的等待
-    void clearWaitResponsesBefore(int msgId) {
-        for (String key : waitResponseMsgs.keySet()) {
-            if (Integer.valueOf(key) < msgId) {
-                waitResponseMsgs.remove(key);
+    void removeWaitResponseMsgBefore(int msgId) {
+
+        int len = waitResponseMsgQ.size();
+
+        for (int i = 0; i < len; i++) {
+            WTFSocketMsgWrapper wrapper = waitResponseMsgQ.poll();
+
+            if (Integer.valueOf(wrapper.getTag()) > msgId) {
+                waitResponseMsgQ.add(wrapper);
             }
         }
     }
 
     // 检查是否有等待回复超时
-    void checkResponseTimeout() {
+    void checkResponseMsgTimeout() {
 
-        if (!waitResponseMsgs.isEmpty()) {
+        // 如果是心跳包丢失引起的异常
+        // 会在dispatchException的过程中清空等待回复队列
+        // 使用 for( : ) 语句会出问题，这是个坑
+        // 这样提醒我如果遍历过程中有可能修改 集合对象 的操作
+        // 尽量不要使用 for( : ) 语句
+        for (int i = 0; i < waitResponseMsgQ.size(); i++) {
+            WTFSocketMsgWrapper wrapper = waitResponseMsgQ.poll();
 
-            List<WTFSocketMsgWrapper> timeoutMsg = new ArrayList<>();
-
-            for (WTFSocketMsgWrapper msgWrapper : waitResponseMsgs.values()) {
-                if (msgWrapper.isTimeout()) {
-                    WTFSocketSessionFactory.dispatchException(
-                            new WTFSocketException("wait response timed out"),
-                            msgWrapper);
-                    timeoutMsg.add(msgWrapper);
-                }
-            }
-
-            for (WTFSocketMsgWrapper msgWrapper : timeoutMsg) {
-                waitResponseMsgs.remove(msgWrapper.getTag());
+            if (wrapper.isTimeout()) {
+                WTFSocketSessionFactory.dispatchException(
+                        new WTFSocketException("wait response timed out"),
+                        wrapper);
+            } else {
+                waitResponseMsgQ.add(wrapper);
             }
         }
-
     }
 
     // 判断是否有消息等待发送
     boolean hasWaitSendMsg() {
-        return !waitSendMsgs.isEmpty();
+        return !waitSendMsgQ.isEmpty();
     }
 
     // 获取下一个等待发送的消息
@@ -258,12 +268,15 @@ public class WTFSocketSession {
 
         if (hasWaitSendMsg()) {
 
-            while (!waitSendMsgs.isEmpty()) {
+            while (!waitSendMsgQ.isEmpty()) {
 
-                WTFSocketMsgWrapper msgWrapper = waitSendMsgs.poll();
+                WTFSocketMsgWrapper msgWrapper = waitSendMsgQ.poll();
                 if (msgWrapper.isTimeout()) {
                     WTFSocketSessionFactory.dispatchException(new WTFSocketException("wait send timed out"), msgWrapper);
                     continue;
+                }
+                if (msgWrapper.isNeedResponse()) {
+                    waitResponseMsgQ.add(msgWrapper);
                 }
                 return msgWrapper;
             }
@@ -272,18 +285,31 @@ public class WTFSocketSession {
         return null;
     }
 
-    // 成功发送了一条消息
-    void successSentMsg(WTFSocketMsgWrapper msgWrapper) {
+    // 回滚一条待发送消息
+    void rollbackSendMsg(WTFSocketMsgWrapper msgWrapper) {
+        waitSendMsgQ.add(msgWrapper);
+    }
 
-        waitSendMsgs.remove(msgWrapper.getTag());
-        if (msgWrapper.isNeedResponse()) {
-            waitResponseMsgs.put(msgWrapper.getTag(), msgWrapper);
-        }
+
+    void triggerAllWaitResponseMsgTimeout() {
+
+        triggerAllWaitTimeout(waitResponseMsgQ);
 
     }
 
-    // 成功发送了一条消息
-    void failureSentMsg(WTFSocketMsgWrapper msgWrapper) {
-        waitSendMsgs.add(msgWrapper);
+    void triggerAllWaitSendMsgTimeout() {
+
+        triggerAllWaitTimeout(waitSendMsgQ);
+
+    }
+
+    private void triggerAllWaitTimeout(ConcurrentLinkedQueue<WTFSocketMsgWrapper> msgQ) {
+
+        for (int i = 0; i < msgQ.size(); i++) {
+            WTFSocketMsgWrapper wrapper = msgQ.poll();
+            WTFSocketSessionFactory.dispatchException(
+                    new WTFSocketException("wait response timed out"),
+                    wrapper);
+        }
     }
 }
