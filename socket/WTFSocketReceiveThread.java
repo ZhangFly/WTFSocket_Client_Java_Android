@@ -18,7 +18,7 @@ class WTFSocketReceiveThread implements Runnable {
     @Override
     public void run() {
 
-        WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper();
+        WTFSocketMsgWrapper msgWrapper = null;
         String data = null;
 
         try {
