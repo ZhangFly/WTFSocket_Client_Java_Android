@@ -55,9 +55,10 @@ class WTFSocketSendThread implements Runnable {
                                 msgWrapper
                         ));
                     }
-
                     socket.getOutputStream().write((msgWrapper + WTFSocketBootstrap.EOT).getBytes());
                     session.successSentMsg(msgWrapper);
+                }else{
+                    session.failureSentMsg(msgWrapper);
                 }
 
                 msgWrapper = session.nextWaitSendMsg();
