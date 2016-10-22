@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 /**
  * socket连接配置

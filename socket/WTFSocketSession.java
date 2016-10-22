@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 import org.apache.commons.lang.StringUtils;
 

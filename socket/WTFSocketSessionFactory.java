@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -147,7 +147,7 @@ public class WTFSocketSessionFactory {
      * 如果会话不存在会自动创建会话
      *
      * @param to 目标地址
-     * @return WTFSocketSession
+     * @return wtf.socket.WTFSocketSession
      */
     public static WTFSocketSession getSession(String to) {
 
@@ -213,7 +213,7 @@ public class WTFSocketSessionFactory {
      *
      * @param listener 事件监听者
      */
-    public static void clearEventListener(WTFSocketEventListener listener) {
+    public static void clearEventListeners(WTFSocketEventListener listener) {
         eventListeners.clear();
     }
 

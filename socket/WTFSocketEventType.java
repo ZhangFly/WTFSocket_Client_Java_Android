@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 enum  WTFSocketEventType {
     CONNECT ,

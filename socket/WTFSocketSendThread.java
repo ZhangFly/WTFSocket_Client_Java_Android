@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 import java.io.IOException;
 import java.net.Socket;

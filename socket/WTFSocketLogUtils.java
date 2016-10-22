@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

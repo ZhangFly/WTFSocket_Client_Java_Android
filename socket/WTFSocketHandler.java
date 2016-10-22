@@ -1,5 +1,4 @@
-package wtf.socket;
-
+package socket;
 
 /**
  * socket响应

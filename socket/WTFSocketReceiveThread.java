@@ -1,4 +1,4 @@
-package wtf.socket;
+package socket;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
