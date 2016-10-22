@@ -1,6 +1,6 @@
 # WTFSocket
 
-[`wtf-socket-1.0.jar`](https://github.com/ZhangFly/WTFSocket/tree/master/socket/jar)
+[`wtf-socket-*.jar`](https://github.com/ZhangFly/WTFSocket/tree/master/socket/jar)
 
 **Brief**
 
