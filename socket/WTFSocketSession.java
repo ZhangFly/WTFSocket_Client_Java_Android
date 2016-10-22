@@ -30,6 +30,7 @@ public class WTFSocketSession {
     // 等待发送信息列表
     private ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitSendMsgQ = new ConcurrentLinkedQueue<>();
 
+    // 屏蔽构造函数
     WTFSocketSession(String from, String to) {
         this.from = from;
         this.to = to;
