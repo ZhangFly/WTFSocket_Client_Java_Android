@@ -49,7 +49,7 @@ class WTFSocketSendThread implements Runnable {
                 if (!socket.isClosed() && socket.isConnected()) {
                     if (msgWrapper.getMsgType() != 0) {
                         WTFSocketLogUtils.info(String.format(
-                                "send msg from <%s> to <%s>:\r\nmsg => %s",
+                                "send msg from <%s> to <%s>:\nmsg => %s",
                                 msgWrapper.getFrom(),
                                 msgWrapper.getTo(),
                                 msgWrapper

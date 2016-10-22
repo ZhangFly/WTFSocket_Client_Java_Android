@@ -60,7 +60,7 @@ class WTFSocketReceiveThread implements Runnable {
 
                 if (msgWrapper.getMsgType() == 1) {
                     WTFSocketLogUtils.info(String.format(
-                            "received msg from <%s> to <%s>:\r\nmsg => %s",
+                            "received msg from <%s> to <%s>:\nmsg => %s",
                             msgWrapper.getFrom(),
                             msgWrapper.getTo(),
                             msgWrapper

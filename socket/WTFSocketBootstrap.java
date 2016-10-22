@@ -54,6 +54,11 @@ class WTFSocketBootstrap implements Runnable {
             // 写线程同时负责检查消息是否超时
             frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
 
+            // 如果需要开启心跳包线程
+            if (config.isUseHeartbeat()) {
+                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+            }
+
             // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
             socket.setKeepAlive(true);
@@ -64,11 +69,6 @@ class WTFSocketBootstrap implements Runnable {
 
             // 开启接收监听线程
             frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
-
-            // 如果需要开启心跳包线程
-            if (config.isUseHeartbeat()) {
-                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
-            }
 
             WTFSocketSessionFactory.notifyEventListeners(WTFSocketEventType.CONNECT);
 

@@ -147,7 +147,7 @@ public class WTFSocketSessionFactory {
      * 如果会话不存在会自动创建会话
      *
      * @param to 目标地址
-     * @return wtf.socket.WTFSocketSession
+     * @return wtf.WTFSocketSession
      */
     public static WTFSocketSession getSession(String to) {
 
