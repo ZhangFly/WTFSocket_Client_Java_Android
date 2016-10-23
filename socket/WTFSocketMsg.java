@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -44,8 +44,7 @@ public class WTFSocketMsg {
      * @return 消息模板
      */
     public static WTFSocketMsg empty() {
-        WTFSocketMsg template = new WTFSocketMsg();
-        return template;
+        return new WTFSocketMsg();
     }
 
     /**
@@ -54,9 +53,7 @@ public class WTFSocketMsg {
      * @return 消息模板
      */
     public static WTFSocketMsg success() {
-        WTFSocketMsg template = new WTFSocketMsg();
-        template.setFlag(1);
-        return template;
+        return new WTFSocketMsg().setFlag(1);
     }
 
     /**
@@ -65,10 +62,7 @@ public class WTFSocketMsg {
      * @return 消息模板
      */
     public static WTFSocketMsg failure(int errCode) {
-        WTFSocketMsg template = new WTFSocketMsg();
-        template.setFlag(0);
-        template.setErrCode(errCode);
-        return template;
+        return new WTFSocketMsg().setFlag(0).setErrCode(errCode);
     }
 
     /**
@@ -77,9 +71,7 @@ public class WTFSocketMsg {
      * @return 消息模板
      */
     public static WTFSocketMsg heartbeat() {
-        WTFSocketMsg template = new WTFSocketMsg();
-        template.setMsgType(0);
-        return template;
+        return new WTFSocketMsg().setMsgType(0);
     }
 
     /**
@@ -135,7 +127,7 @@ public class WTFSocketMsg {
 
     @Override
     public String toString() {
-        return JSON.toJSONString(this);
+        return JSON.toJSONString(wrapper);
     }
 
     String getFrom() {

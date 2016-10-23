@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 class WTFSocketHeartbeatThread implements Runnable {
 
@@ -11,17 +11,12 @@ class WTFSocketHeartbeatThread implements Runnable {
     @Override
     public void run() {
 
-        if (!WTFSocketSessionFactory.isAvailable()) {
-            return;
-        }
-
-        WTFSocketMsg heartbeatMsg = WTFSocketMsg.heartbeat();
-        WTFSocketSessionFactory.HEARTBEAT.sendMsg(heartbeatMsg, new WTFSocketHandler() {
+        WTFSocketSessionFactory.HEARTBEAT.sendMsg(WTFSocketMsg.heartbeat(), new WTFSocketHandler() {
 
             @Override
             public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
 
-                session.removeWaitResponseMsgBefore(msg.getMsgId());
+                session.removeWaitResponseMsgBefore(msg);
 
                 return true;
             }
@@ -29,6 +24,13 @@ class WTFSocketHeartbeatThread implements Runnable {
             @Override
             public boolean onException(WTFSocketSession session, WTFSocketMsg msg, WTFSocketException e) {
 
+                WTFSocketLogUtils.err(
+                        String.format(
+                                "heartbeat lost :\nmsg => %s\n%s",
+                                msg,
+                                e
+                        )
+                );
                 WTFSocketSessionFactory.deInit();
 
                 return true;

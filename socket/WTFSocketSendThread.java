@@ -1,4 +1,6 @@
-package socket;
+package wtf.socket;
+
+import org.apache.commons.lang.ObjectUtils;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -7,8 +9,8 @@ class WTFSocketSendThread implements Runnable {
 
     private WTFSocketBootstrap wtfSocketClient;
 
-    WTFSocketSendThread(WTFSocketBootstrap socket) {
-        this.wtfSocketClient = socket;
+    WTFSocketSendThread(WTFSocketBootstrap wtfSocketClient) {
+        this.wtfSocketClient = wtfSocketClient;
     }
 
     @Override
@@ -24,7 +26,7 @@ class WTFSocketSendThread implements Runnable {
         for (WTFSocketSession session : WTFSocketSessionFactory.getSessions()) {
 
             // 服务器会话已优先处理
-            if (session == WTFSocketSessionFactory.SERVER) {
+            if (ObjectUtils.equals(session, WTFSocketSessionFactory.SERVER)) {
                 continue;
             }
 
@@ -64,7 +66,6 @@ class WTFSocketSendThread implements Runnable {
             }
 
         } catch (IOException e) {
-            session.rollbackSendMsg(msgWrapper);
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()), msgWrapper);
         }
     }

@@ -1,5 +1,4 @@
-package socket;
-
+package wtf.socket;
 /**
  * socket连接配置
  */
@@ -8,7 +7,7 @@ public class WTFSocketConfig {
     private String ip;
     private int port;
     private String localName;
-    private boolean isUseHeartbeat = false;
+    private boolean useHeartbeat = false;
     private int heartbeatPeriod = 5_000;
     private int heartbeatBreakTime = 3;
 
@@ -40,11 +39,11 @@ public class WTFSocketConfig {
     }
 
     public boolean isUseHeartbeat() {
-        return isUseHeartbeat;
+        return useHeartbeat;
     }
 
     public WTFSocketConfig setUseHeartbeat(boolean useHeartbeat) {
-        this.isUseHeartbeat = useHeartbeat;
+        this.useHeartbeat = useHeartbeat;
         return this;
     }
 

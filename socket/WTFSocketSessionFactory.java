@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -16,24 +16,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class WTFSocketSessionFactory {
 
     // 本机配置
-    private static WTFSocketConfig config;
+    private static WTFSocketConfig config = null;
 
     // 服务器会话
-    public static WTFSocketSession SERVER;
+    public static WTFSocketSession SERVER = null;
 
     // 心跳包会话
-    static WTFSocketSession HEARTBEAT;
+    static WTFSocketSession HEARTBEAT = null;
 
     // 空会话
     // 所有无法定位会话对象的消息/异常会被分配到该会话下
-    static WTFSocketSession EMPTY;
+    static WTFSocketSession EMPTY = null;
 
+    // 会话表
     private static ConcurrentHashMap<String, WTFSocketSession> sessions = new ConcurrentHashMap<>();
 
+    // 状态标志
     private static volatile boolean isAvailable = false;
 
     // socket 客服端
-    private static WTFSocketBootstrap socketClient;
+    private static WTFSocketBootstrap socketClient = null;
 
     // 自增的消息ID
     private static AtomicInteger msgId = new AtomicInteger(0);
@@ -45,7 +47,7 @@ public class WTFSocketSessionFactory {
     private static WTFSocketHandler defaultResponse = new WTFSocketHandler() {
     };
 
-    // 打印响应
+    // 打印
     private static WTFSocketHandler printHandler = new WTFSocketHandler() {
         @Override
         public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
@@ -100,46 +102,53 @@ public class WTFSocketSessionFactory {
 
         WTFSocketSessionFactory.config = config;
 
-        // 每次复位，主会话将会保留
-        // 心跳会话将会重新开启
         EMPTY = getSession("empty");
         SERVER = getSession("server");
         HEARTBEAT = getSession("heartbeat");
 
-        WTFSocketSessionFactory.socketClient = new WTFSocketBootstrap(config);
+        if (socketClient == null) {
+            socketClient = new WTFSocketBootstrap(config);
+        }
         socketClient.start();
     }
 
     /**
      * 反初始化
+     * 不会关闭监听线程
+     *
      */
     public static void deInit() {
 
         if (isAvailable) {
-
             // 关闭socket客户端
             socketClient.close();
             // 设置状态到不可用
             isAvailable = false;
-
-            for (WTFSocketSession session : sessions.values()) {
-                session.close();
-            }
-
-            notifyEventListeners(WTFSocketEventType.DISCONNECT);
-
-            WTFSocketLogUtils.info("socket disconnect");
         }
+        for (WTFSocketSession session : sessions.values()) {
+            session.close();
+        }
+        notifyEventListeners(WTFSocketEventType.DISCONNECT);
     }
 
     /**
      * 复位
+     *
      */
     public static void reInit() {
         if (isAvailable) {
             deInit();
         }
         init(config);
+    }
+
+    /**
+     * 终止框架
+     * 并关闭监听线程
+     *
+     */
+    public static void shutdown() {
+        socketClient.shutdown();
     }
 
     /**
@@ -289,12 +298,12 @@ public class WTFSocketSessionFactory {
     static boolean dispatchException(WTFSocketException e, WTFSocketMsgWrapper msgWrapper) {
 
         if (msgWrapper == null) {
-            msgWrapper = new WTFSocketMsgWrapper();
+            msgWrapper = WTFSocketMsgWrapper.empty();
         }
 
         WTFSocketSession session = msgWrapper.getBelong();
 
-        if (!session.dispatchException(msgWrapper, e)) {
+        if (!session.dispatchException(e, msgWrapper)) {
             // 会话对象无法处理消息
             // 使用默认响应函数
             if (!defaultResponse.onException(msgWrapper.getBelong(), msgWrapper.getMsg(), e)) {
@@ -331,8 +340,6 @@ public class WTFSocketSessionFactory {
                 default:
                     break;
             }
-
         }
-
     }
 }

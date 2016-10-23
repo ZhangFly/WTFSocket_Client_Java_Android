@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 /**
  * socket异常类
@@ -18,7 +18,7 @@ public class WTFSocketException extends Exception{
                 .append(element.getClassName())
                 .append("$")
                 .append(element.getMethodName())
-                .append("\r\ncause => ")
+                .append("\ncause => ")
                 .append(msg);
 
     }
@@ -26,7 +26,7 @@ public class WTFSocketException extends Exception{
     @Override
     public String getMessage() {
         if (addition != null) {
-            format.append("\r\naddition => data: ")
+            format.append("\naddition => data: ")
                     .append(addition);
         }
         return format.toString();

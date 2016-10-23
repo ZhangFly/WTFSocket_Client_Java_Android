@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -26,6 +26,21 @@ class WTFSocketMsgWrapper {
     @JSONField(serialize = false)
     private boolean isNeedResponse = false;
 
+    static WTFSocketMsgWrapper empty() {
+        return wrapMsg(null, WTFSocketMsg.empty());
+    }
+
+    static WTFSocketMsgWrapper wrapMsg(WTFSocketMsg msg) {
+        return wrapMsg(null, msg);
+    }
+
+    static WTFSocketMsgWrapper wrapMsg(WTFSocketSession belong, WTFSocketMsg msg) {
+
+        WTFSocketMsgWrapper msgWrapper = new WTFSocketMsgWrapper(belong, msg);
+        msg.setMsgId(WTFSocketSessionFactory.getSelfIncrementMsgId());
+        return msgWrapper;
+    }
+
     public WTFSocketMsgWrapper() {
         this(null, WTFSocketMsg.empty());
     }
@@ -43,9 +58,7 @@ class WTFSocketMsgWrapper {
             msg.setTo(belong.getTo());
         }
 
-        msg.setMsgId(WTFSocketSessionFactory.getSelfIncrementMsgId());
         msg.setWrapper(this);
-
         this.msg = msg;
     }
 

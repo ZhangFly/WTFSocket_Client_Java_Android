@@ -1,11 +1,13 @@
-package socket;
+package wtf.socket;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Socket通信客户端
@@ -22,7 +24,7 @@ class WTFSocketBootstrap implements Runnable {
     private Socket socket;
 
     // 框架轮询器
-    private ScheduledExecutorService frameSchedule = Executors.newSingleThreadScheduledExecutor();
+    private static ScheduledExecutorService frameSchedule = Executors.newSingleThreadScheduledExecutor();
 
     // 缓冲器
     private StringBuffer buffer = new StringBuffer();
@@ -30,6 +32,17 @@ class WTFSocketBootstrap implements Runnable {
 
     WTFSocketBootstrap(WTFSocketConfig config) {
         this.config = config;
+        // 开启写线程
+        // 写线程同时负责检查消息是否超时
+        frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
+
+        // 如果需要开启心跳包线程
+        if (config.isUseHeartbeat()) {
+            frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+        }
+
+        // 开启接收监听线程
+        frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -40,24 +53,8 @@ class WTFSocketBootstrap implements Runnable {
     public void run() {
 
         try {
-            if (socket == null) {
-                // 新建socket
-                socket = new Socket();
-            } else {
-                // 复位socket
-                if (!socket.isClosed()) {
-                    close();
-                }
-            }
-
-            // 开启写线程
-            // 写线程同时负责检查消息是否超时
-            frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
-
-            // 如果需要开启心跳包线程
-            if (config.isUseHeartbeat()) {
-                frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), 150, config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
-            }
+            // 开启socket
+            socket = new Socket();
 
             // 连接socket
             socket.connect(new InetSocketAddress(config.getIp(), config.getPort()), 5_000);
@@ -66,9 +63,6 @@ class WTFSocketBootstrap implements Runnable {
 
             // 更新框架状态
             WTFSocketSessionFactory.setIsAvailable(true);
-
-            // 开启接收监听线程
-            frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
 
             WTFSocketSessionFactory.notifyEventListeners(WTFSocketEventType.CONNECT);
 
@@ -87,7 +81,18 @@ class WTFSocketBootstrap implements Runnable {
         try {
             // 关闭socket连接
             socket.close();
-            // 关闭线程池
+            clearBuffer();
+        } catch (Exception e) {
+            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
+        }
+    }
+
+    // 终止客户端
+    void shutdown() {
+        try {
+            // 关闭socket连接
+            socket.close();
+            clearBuffer();
             frameSchedule.shutdown();
         } catch (Exception e) {
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
@@ -95,7 +100,7 @@ class WTFSocketBootstrap implements Runnable {
     }
 
     // 解析并返回有效数据包
-    synchronized List<String> parseAndGetPackets(String data) throws IOException {
+    List<String> parseAndGetPackets(String data) throws IOException {
 
         List<String> packets = new ArrayList<>();
         buffer.append(data);
@@ -114,7 +119,7 @@ class WTFSocketBootstrap implements Runnable {
     }
 
     // 清空buffer
-    synchronized void clearBuffer() {
+    void clearBuffer() {
         buffer.setLength(0);
     }
 

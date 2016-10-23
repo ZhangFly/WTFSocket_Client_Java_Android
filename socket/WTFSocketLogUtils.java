@@ -1,6 +1,5 @@
-package socket;
+package wtf.socket;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.SimpleDateFormat;

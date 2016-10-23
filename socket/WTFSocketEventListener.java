@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 public abstract class WTFSocketEventListener {
 

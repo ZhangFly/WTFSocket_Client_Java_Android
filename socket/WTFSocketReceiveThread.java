@@ -1,4 +1,4 @@
-package socket;
+package wtf.socket;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
@@ -18,11 +18,11 @@ class WTFSocketReceiveThread implements Runnable {
     @Override
     public void run() {
 
+        Socket socket = wtfSocketClient.getSocket();
         WTFSocketMsgWrapper msgWrapper = null;
         String data = null;
 
         try {
-            Socket socket = wtfSocketClient.getSocket();
 
             if (socket.isClosed() || !socket.isConnected()) {
                 return;
