@@ -1,7 +1,5 @@
 # WTFSocket
 
-[`wtf-socket-*.jar`](https://github.com/ZhangFly/WTFSocket/tree/master/socket/jar)
-
 **Brief**
 
 适用于使用一个socket客户端，和多个对象的通话的场景。
