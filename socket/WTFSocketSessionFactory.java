@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class WTFSocketSessionFactory {
 
+    private static final WTFSocketHandler DEFAULT_RESPONSE = new WTFSocketHandler() {
+    };
+
     // 本机配置
     private static WTFSocketConfig config = null;
 
@@ -44,15 +47,14 @@ public class WTFSocketSessionFactory {
     private static List<WTFSocketEventListener> eventListeners = new ArrayList<>();
 
     // 默认响应方法
-    private static WTFSocketHandler defaultResponse = new WTFSocketHandler() {
-    };
+    private static WTFSocketHandler defaultResponse = DEFAULT_RESPONSE;
 
     // 打印
     private static WTFSocketHandler printHandler = new WTFSocketHandler() {
         @Override
         public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
             WTFSocketLogUtils.info(String.format(
-                    "printHandler: receive msg from <%s> to <%s>:\r\nmsg => %s",
+                    "printHandler: receive msg from <%s> to <%s>:\nmsg => %s",
                     session.getFrom(),
                     session.getTo(),
                     msg
@@ -63,7 +65,7 @@ public class WTFSocketSessionFactory {
         @Override
         public boolean onException(WTFSocketSession session, WTFSocketMsg msg, WTFSocketException e) {
             WTFSocketLogUtils.err(String.format(
-                    "printHandler: occur exception from <%s> to <%s>:\r\nmsg => %s\r\n%s",
+                    "printHandler: occur exception from <%s> to <%s>:\nmsg => %s\n%s",
                     session.getFrom(),
                     session.getTo(),
                     msg,
@@ -190,8 +192,7 @@ public class WTFSocketSessionFactory {
      * 移除默认响应方法
      */
     public static void removeDefaultResponse() {
-        defaultResponse = new WTFSocketHandler() {
-        };
+        defaultResponse = DEFAULT_RESPONSE;
     }
 
 

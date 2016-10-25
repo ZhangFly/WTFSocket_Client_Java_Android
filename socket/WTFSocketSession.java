@@ -174,8 +174,7 @@ public class WTFSocketSession {
      * 移除默认响应方法
      */
     public void removeDefaultResponse() {
-        defaultResponse = new WTFSocketHandler() {
-        };
+        defaultResponse = DEFAULT_RESPONSE;
     }
 
     /**
