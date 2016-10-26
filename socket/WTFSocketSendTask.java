@@ -51,7 +51,10 @@ class WTFSocketSendTask implements Runnable {
                                 msgWrapper
                         ));
                     }
-                    socket.getOutputStream().write((msgWrapper + WTFSocketProtocolParser.EOT).getBytes());
+
+                    byte[] bytes = WTFSocketSessionFactory.getEncoder().encode(msgWrapper + WTFSocketProtocolParser.EOT);
+                    socket.getOutputStream().write(bytes);
+
                 }else{
                     session.rollbackSendMsg(msgWrapper);
                 }

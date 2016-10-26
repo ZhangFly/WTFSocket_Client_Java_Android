@@ -20,6 +20,20 @@ public class WTFSocketSessionFactory {
     private static final WTFSocketHandler DEFAULT_RESPONSE = new WTFSocketHandler() {
     };
 
+    private static final WTFSocketEncoder DEFAULT_ENCODER = new WTFSocketEncoder() {
+        @Override
+        public byte[] encode(String data) {
+            return data.getBytes();
+        }
+    };
+
+    private static final WTFSocketDecoder DEFAULT_DECODER = new WTFSocketDecoder() {
+        @Override
+        public String decode(byte[] data, int len) {
+            return new String(data, 0, len);
+        }
+    };
+
     // 本机配置
     private static WTFSocketConfig config = null;
 
@@ -48,7 +62,15 @@ public class WTFSocketSessionFactory {
     // 默认响应方法
     private static WTFSocketHandler defaultResponse = DEFAULT_RESPONSE;
 
+    // 执行handler方法
     private static ExecutorService executor = Executors.newCachedThreadPool();
+
+    // 编码器
+    private static WTFSocketEncoder encoder = DEFAULT_ENCODER;
+
+    // 解码器
+    private static WTFSocketDecoder decoder = DEFAULT_DECODER;
+
 
     // 打印方法
     // 当消息/异常没有被任何方法响应时
@@ -251,6 +273,50 @@ public class WTFSocketSessionFactory {
             notifyEventListeners(WTFSocketEventType.NEW_SESSION, session, msg);
         }
         return session;
+    }
+
+    /**
+     * 获取编码器
+     *
+     * @return 编码器
+     */
+    public static WTFSocketEncoder getEncoder() {
+        return encoder;
+    }
+
+    /**
+     * 设置编码器
+     *
+     * @param encoder 编码器
+     */
+    public static void setEncoder(WTFSocketEncoder encoder) {
+        if (encoder != null) {
+            WTFSocketSessionFactory.encoder = encoder;
+        }else {
+            WTFSocketSessionFactory.encoder = DEFAULT_ENCODER;
+        }
+    }
+
+    /**
+     * 获取解码器
+     *
+     * @return 解码器
+     */
+    public static WTFSocketDecoder getDecoder() {
+        return decoder;
+    }
+
+    /**
+     * 设置解码器
+     *
+     * @param decoder 解码器
+     */
+    public static void setDecoder(WTFSocketDecoder decoder) {
+        if (decoder != null) {
+            WTFSocketSessionFactory.decoder = decoder;
+        }else {
+            WTFSocketSessionFactory.decoder = DEFAULT_DECODER;
+        }
     }
 
     // 设置框架就绪

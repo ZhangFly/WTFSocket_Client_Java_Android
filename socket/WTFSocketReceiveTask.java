@@ -32,8 +32,7 @@ class WTFSocketReceiveTask implements Runnable {
 
             byte bytes[] = new byte[toReadLen];
             int readLen = socket.getInputStream().read(bytes);
-            data = new String(bytes, 0, readLen);
-
+            data = WTFSocketSessionFactory.getDecoder().decode(bytes, readLen);
             parser.parseAndLoadPackets(data, packets, WTFSocketMsgWrapper.class);
 
         } catch (Exception e) {
