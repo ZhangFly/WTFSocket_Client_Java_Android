@@ -3,30 +3,34 @@ package wtf.socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
+import wtf.socket.WTFSocketAnnotations.Necessary;
+import wtf.socket.WTFSocketAnnotations.Option;
 
 /**
  * Socket通信消息模板
  * from/to属性为框架自动填充
  * 个人设置将会被忽略
+ *
+ * 协议 V1.0
  */
 public class WTFSocketMsg {
 
-    /* 协议必备属性 */
-    private String from = "selfId";
-
-    private String to = "server";
-
-    private Integer msgId = -1;
-
+    @Necessary
+    private String from = "unknown";
+    @Necessary
+    private String to = "unknown";
+    @Necessary
+    private Integer msgId = 0;
+    @Necessary
     private Integer msgType = 1;
 
-    /* 协议可选属性 */
+    @Option
     private Integer flag;
-
+    @Option
     private Integer errCode;
-
+    @Option
     private Integer cmd;
-
+    @Option
     private JSONArray params;
 
 

@@ -1,15 +1,11 @@
 package wtf.socket;
 
-class WTFSocketHeartbeatThread implements Runnable {
-
-    private int breakTime;
-
-    WTFSocketHeartbeatThread(int breakTime) {
-        this.breakTime = breakTime;
-    }
+class WTFSocketHeartbeatTask implements Runnable {
 
     @Override
     public void run() {
+
+        WTFSocketConfig config = WTFSocketSessionFactory.getConfig();
 
         WTFSocketSessionFactory.HEARTBEAT.sendMsg(WTFSocketMsg.heartbeat(), new WTFSocketHandler() {
 
@@ -35,6 +31,6 @@ class WTFSocketHeartbeatThread implements Runnable {
 
                 return true;
             }
-        }, breakTime);
+        }, config.getHeartbeatBreakTime() * config.getHeartbeatPeriod());
     }
 }

@@ -3,8 +3,6 @@ package wtf.socket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -14,35 +12,36 @@ import java.util.concurrent.TimeUnit;
  */
 class WTFSocketBootstrap implements Runnable {
 
-    // 传输终止符号
-    static final String EOT = "\r\n";
-
-    // 连接地址
-    private WTFSocketConfig config;
+    // 自举方法实例
+    private static WTFSocketBootstrap INSTANCE = null;
 
     // socket 实例
-    private Socket socket;
+    private static Socket socket;
 
     // 框架轮询器
     private static ScheduledExecutorService frameSchedule = Executors.newSingleThreadScheduledExecutor();
 
-    // 缓冲器
-    private StringBuffer buffer = new StringBuffer();
+    // 协议解释器
+    private static WTFSocketProtocolParser parser = null;
 
+    private WTFSocketBootstrap() {
 
-    WTFSocketBootstrap(WTFSocketConfig config) {
-        this.config = config;
-        // 开启写线程
+        WTFSocketConfig config = WTFSocketSessionFactory.getConfig();
+
         // 写线程同时负责检查消息是否超时
-        frameSchedule.scheduleAtFixedRate(new WTFSocketSendThread(this), 50, 200, TimeUnit.MILLISECONDS);
+        frameSchedule.scheduleAtFixedRate(new WTFSocketSendTask(), 50, 200, TimeUnit.MILLISECONDS);
 
         // 如果需要开启心跳包线程
         if (config.isUseHeartbeat()) {
-            frameSchedule.scheduleAtFixedRate(new WTFSocketHeartbeatThread(config.getHeartbeatPeriod() * config.getHeartbeatBreakTime()), config.getHeartbeatPeriod(), config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS);
+            frameSchedule.scheduleAtFixedRate(
+                    new WTFSocketHeartbeatTask(),
+                    100,
+                    config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS
+            );
         }
 
         // 开启接收监听线程
-        frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveThread(this), 100, 200, TimeUnit.MILLISECONDS);
+        frameSchedule.scheduleAtFixedRate(new WTFSocketReceiveTask(), 150, 200, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -53,6 +52,10 @@ class WTFSocketBootstrap implements Runnable {
     public void run() {
 
         try {
+            WTFSocketConfig config = WTFSocketSessionFactory.getConfig();
+
+            parser = new WTFSocketProtocolParser(WTFSocketMsg.class);
+
             // 开启socket
             socket = new Socket();
 
@@ -72,59 +75,40 @@ class WTFSocketBootstrap implements Runnable {
     }
 
     // 开启客户端
-    void start() {
-        frameSchedule.execute(this);
+    static void start() {
+        if (INSTANCE == null) {
+            INSTANCE = new WTFSocketBootstrap();
+        }
+        frameSchedule.execute(INSTANCE);
     }
 
     // 关闭客户端
-    void close() {
+    static void close() {
         try {
             // 关闭socket连接
             socket.close();
-            clearBuffer();
         } catch (Exception e) {
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
         }
     }
 
     // 终止客户端
-    void shutdown() {
+    static void shutdown() {
         try {
             // 关闭socket连接
             socket.close();
-            clearBuffer();
             frameSchedule.shutdown();
         } catch (Exception e) {
             WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
         }
     }
 
-    // 解析并返回有效数据包
-    List<String> parseAndGetPackets(String data) throws IOException {
-
-        List<String> packets = new ArrayList<>();
-        buffer.append(data);
-
-        while (true) {
-            int index = buffer.indexOf(WTFSocketBootstrap.EOT);
-            if (index == -1) {
-                break;
-            }
-            String packet = buffer.substring(0, index);
-            buffer.delete(0, index + 2);
-            packets.add(packet);
-        }
-
-        return packets;
-    }
-
-    // 清空buffer
-    void clearBuffer() {
-        buffer.setLength(0);
-    }
-
     // 获取socket实例
-    Socket getSocket() {
+    static Socket getSocket() {
         return socket;
+    }
+
+    static WTFSocketProtocolParser getParser() {
+        return parser;
     }
 }

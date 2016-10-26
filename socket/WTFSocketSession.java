@@ -155,7 +155,7 @@ public class WTFSocketSession {
         }
 
         if (waitResponseMsgQ.contains(msgWrapper)) {
-            waitResponseMsgQ.remove(msgWrapper.getTag());
+            waitResponseMsgQ.remove(msgWrapper);
         }
     }
 

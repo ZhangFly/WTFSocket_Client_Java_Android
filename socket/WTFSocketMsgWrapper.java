@@ -4,6 +4,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.annotation.JSONField;
 
+/**
+ * 协议 V1.0
+ */
 class WTFSocketMsgWrapper {
 
     // 消息级别默认handler

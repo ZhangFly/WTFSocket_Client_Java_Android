@@ -5,13 +5,7 @@ import org.apache.commons.lang.ObjectUtils;
 import java.io.IOException;
 import java.net.Socket;
 
-class WTFSocketSendThread implements Runnable {
-
-    private WTFSocketBootstrap wtfSocketClient;
-
-    WTFSocketSendThread(WTFSocketBootstrap wtfSocketClient) {
-        this.wtfSocketClient = wtfSocketClient;
-    }
+class WTFSocketSendTask implements Runnable {
 
     @Override
     public void run() {
@@ -41,7 +35,7 @@ class WTFSocketSendThread implements Runnable {
 
     private void doWrite(WTFSocketSession session) {
 
-        Socket socket = wtfSocketClient.getSocket();
+        Socket socket = WTFSocketBootstrap.getSocket();
 
         WTFSocketMsgWrapper msgWrapper = session.nextWaitSendMsg();
         try {
@@ -57,7 +51,7 @@ class WTFSocketSendThread implements Runnable {
                                 msgWrapper
                         ));
                     }
-                    socket.getOutputStream().write((msgWrapper + WTFSocketBootstrap.EOT).getBytes());
+                    socket.getOutputStream().write((msgWrapper + WTFSocketProtocolParser.EOT).getBytes());
                 }else{
                     session.rollbackSendMsg(msgWrapper);
                 }

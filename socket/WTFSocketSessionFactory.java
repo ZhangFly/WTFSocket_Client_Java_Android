@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -37,11 +39,8 @@ public class WTFSocketSessionFactory {
     // 状态标志
     private static volatile boolean isAvailable = false;
 
-    // socket 客服端
-    private static WTFSocketBootstrap socketClient = null;
-
     // 自增的消息ID
-    private static AtomicInteger msgId = new AtomicInteger(0);
+    private static AtomicInteger msgId = new AtomicInteger(1);
 
     // 事件监听者
     private static List<WTFSocketEventListener> eventListeners = new ArrayList<>();
@@ -49,7 +48,11 @@ public class WTFSocketSessionFactory {
     // 默认响应方法
     private static WTFSocketHandler defaultResponse = DEFAULT_RESPONSE;
 
-    // 打印
+    private static ExecutorService executor = Executors.newCachedThreadPool();
+
+    // 打印方法
+    // 当消息/异常没有被任何方法响应时
+    // 会调用该方法打印
     private static WTFSocketHandler printHandler = new WTFSocketHandler() {
         @Override
         public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
@@ -108,10 +111,7 @@ public class WTFSocketSessionFactory {
         SERVER = getSession("server");
         HEARTBEAT = getSession("heartbeat");
 
-        if (socketClient == null) {
-            socketClient = new WTFSocketBootstrap(config);
-        }
-        socketClient.start();
+        WTFSocketBootstrap.start();
     }
 
     /**
@@ -122,9 +122,7 @@ public class WTFSocketSessionFactory {
     public static void deInit() {
 
         if (isAvailable) {
-            // 关闭socket客户端
-            socketClient.close();
-            // 设置状态到不可用
+            WTFSocketBootstrap.close();
             isAvailable = false;
         }
         for (WTFSocketSession session : sessions.values()) {
@@ -150,7 +148,7 @@ public class WTFSocketSessionFactory {
      *
      */
     public static void shutdown() {
-        socketClient.shutdown();
+        WTFSocketBootstrap.shutdown();
     }
 
     /**
@@ -271,49 +269,56 @@ public class WTFSocketSessionFactory {
     }
 
     // 消息派发
-    static boolean dispatchMsg(WTFSocketMsgWrapper msgWrapper) {
+    static void dispatchMsg(final WTFSocketMsgWrapper msgWrapper) {
 
-        // 处理心跳包
-        if (msgWrapper.getMsgType() == 0) {
-            return HEARTBEAT.dispatchMsg(msgWrapper);
-        }
+        executor.submit(new Runnable() {
 
-        // 处理普通消息
-        WTFSocketSession session = getSession(msgWrapper.getFrom(), msgWrapper.getMsg());
+            @Override
+            public void run() {
+                // 处理心跳包
+                if (msgWrapper.getMsgType() == 0) {
+                    HEARTBEAT.dispatchMsg(msgWrapper);
+                    return;
+                }
 
-        if (!session.dispatchMsg(msgWrapper)) {
-            if (!defaultResponse.onReceive(session, msgWrapper.getMsg())) {
-                return printHandler.onReceive(session, msgWrapper.getMsg());
+                // 处理普通消息
+                WTFSocketSession session = getSession(msgWrapper.getFrom(), msgWrapper.getMsg());
+
+                if (!session.dispatchMsg(msgWrapper)) {
+                    if (!defaultResponse.onReceive(session, msgWrapper.getMsg())) {
+                        printHandler.onReceive(session, msgWrapper.getMsg());
+                    }
+                }
             }
-        }
-
-        return true;
+        });
     }
 
     // 异常派发
-    static boolean dispatchException(WTFSocketException e) {
-        return dispatchException(e, null);
+    static void dispatchException(WTFSocketException e) {
+        dispatchException(e, null);
     }
 
     // 异常派发
-    static boolean dispatchException(WTFSocketException e, WTFSocketMsgWrapper msgWrapper) {
+    static void dispatchException(final WTFSocketException e, WTFSocketMsgWrapper wrapper) {
 
-        if (msgWrapper == null) {
-            msgWrapper = WTFSocketMsgWrapper.empty();
-        }
+        final WTFSocketMsgWrapper msgWrapper = wrapper == null ? WTFSocketMsgWrapper.empty() : wrapper;
 
-        WTFSocketSession session = msgWrapper.getBelong();
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
 
-        if (!session.dispatchException(e, msgWrapper)) {
-            // 会话对象无法处理消息
-            // 使用默认响应函数
-            if (!defaultResponse.onException(msgWrapper.getBelong(), msgWrapper.getMsg(), e)) {
-                return printHandler.onException(session, msgWrapper.getMsg(), e);
+                WTFSocketSession session = msgWrapper.getBelong();
+
+                if (!session.dispatchException(e, msgWrapper)) {
+                    // 会话对象无法处理消息
+                    // 使用默认响应函数
+                    if (!defaultResponse.onException(msgWrapper.getBelong(), msgWrapper.getMsg(), e)) {
+                        printHandler.onException(session, msgWrapper.getMsg(), e);
+                    }
+
+                }
             }
-
-        }
-
-        return true;
+        });
     }
 
     // 从注册表中将 session 移除
@@ -324,23 +329,33 @@ public class WTFSocketSessionFactory {
     }
 
     // 通知监听者
-    static void notifyEventListeners(WTFSocketEventType type, Object... params) {
+    static void notifyEventListeners(final WTFSocketEventType type, final Object... params) {
 
-        for (WTFSocketEventListener listener : eventListeners) {
+        for (final WTFSocketEventListener listener : eventListeners) {
 
-            switch (type) {
-                case CONNECT:
-                    listener.onConnect();
-                    break;
-                case DISCONNECT:
-                    listener.onDisconnect();
-                    break;
-                case NEW_SESSION:
-                    listener.onNewSession((WTFSocketSession) params[0], (WTFSocketMsg) params[1]);
-                    break;
-                default:
-                    break;
-            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    switch (type) {
+                        case CONNECT:
+                            listener.onConnect();
+                            break;
+                        case DISCONNECT:
+                            listener.onDisconnect();
+                            break;
+                        case NEW_SESSION:
+                            listener.onNewSession((WTFSocketSession) params[0], (WTFSocketMsg) params[1]);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            });
         }
+    }
+
+    // 获取全局配置
+    static WTFSocketConfig getConfig() {
+        return config;
     }
 }
