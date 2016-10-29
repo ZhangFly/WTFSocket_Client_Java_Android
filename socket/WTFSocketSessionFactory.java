@@ -182,7 +182,7 @@ public class WTFSocketSessionFactory {
      */
     public static WTFSocketSession getSession(String to) {
 
-        return getSession(to, WTFSocketMsg.empty());
+        return getSession(to, new WTFSocketMsg());
     }
 
     /**
@@ -312,7 +312,7 @@ public class WTFSocketSessionFactory {
      * @param decoder 解码器
      */
     public static void setDecoder(WTFSocketDecoder decoder) {
-        if (decoder != null) {
+        if (encoder != null) {
             WTFSocketSessionFactory.decoder = decoder;
         }else {
             WTFSocketSessionFactory.decoder = DEFAULT_DECODER;

@@ -1,7 +1,7 @@
 package wtf.socket;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.annotation.JSONField;
 
 /**
@@ -30,7 +30,7 @@ class WTFSocketMsgWrapper {
     private boolean isNeedResponse = false;
 
     static WTFSocketMsgWrapper empty() {
-        return wrapMsg(null, WTFSocketMsg.empty());
+        return wrapMsg(null, new WTFSocketMsg());
     }
 
     static WTFSocketMsgWrapper wrapMsg(WTFSocketMsg msg) {
@@ -45,14 +45,14 @@ class WTFSocketMsgWrapper {
     }
 
     public WTFSocketMsgWrapper() {
-        this(null, WTFSocketMsg.empty());
+        this(null, new WTFSocketMsg());
     }
 
     public WTFSocketMsgWrapper(WTFSocketSession belong, WTFSocketMsg msg) {
 
         // msg 不能为空
         if (msg == null) {
-            msg = WTFSocketMsg.empty();
+            msg = new WTFSocketMsg();
         }
 
         if (belong != null) {
@@ -101,46 +101,36 @@ class WTFSocketMsgWrapper {
         return this;
     }
 
-    public Integer getCmd() {
-        return msg.getCmd();
+    public String getVersion() {
+        return msg.getVersion();
     }
 
-    public WTFSocketMsgWrapper setCmd(Integer cmd) {
-        msg.setCmd(cmd);
-        return this;
+    public void setVersion(String version) {
+        msg.setVersion(version);
     }
 
-    public Integer getFlag() {
-        return msg.getFlag();
+    public Integer getState() {
+        return msg.getState();
     }
 
-    public WTFSocketMsgWrapper setFlag(Integer flag) {
-        msg.setFlag(flag);
-        return this;
+    public void setState(Integer state) {
+        msg.setState(state);
     }
 
-    public Integer getErrCode() {
-        return msg.getErrCode();
+    public JSONObject getBody() {
+        return msg.getBody();
     }
 
-    public WTFSocketMsgWrapper setErrCode(Integer errCode) {
-        msg.setErrCode(errCode);
-        return this;
+    public void setBody(JSONObject body) {
+        msg.setBody(body);
     }
 
-    public JSONArray getParams() {
-        return msg.getParams();
-    }
-
-    public WTFSocketMsgWrapper setParams(JSONArray params) {
-        msg.setParams(params);
-        return this;
-    }
-
+    @JSONField(serialize = false)
     public WTFSocketSession getBelong() {
         return belong;
     }
 
+    @JSONField(serialize = false)
     public WTFSocketMsgWrapper setBelong(WTFSocketSession belong) {
 
         setFrom(belong.getFrom());
@@ -150,33 +140,40 @@ class WTFSocketMsgWrapper {
         return this;
     }
 
+    @JSONField(serialize = false)
     public WTFSocketHandler getHandler() {
         return handler;
     }
 
+    @JSONField(serialize = false)
     public WTFSocketMsgWrapper setHandler(WTFSocketHandler handler) {
         this.handler = handler;
         return this;
     }
 
+    @JSONField(serialize = false)
     public Long getTimeout() {
         return timeout;
     }
 
+    @JSONField(serialize = false)
     public WTFSocketMsgWrapper setTimeout(Long timeout) {
         this.timeout = timeout;
         return this;
     }
 
+    @JSONField(serialize = false)
     public WTFSocketMsg getMsg() {
 
         return msg;
     }
 
+    @JSONField(serialize = false)
     public boolean isNeedResponse() {
         return isNeedResponse;
     }
 
+    @JSONField(serialize = false)
     public void setNeedResponse(boolean needResponse) {
         isNeedResponse = needResponse;
     }

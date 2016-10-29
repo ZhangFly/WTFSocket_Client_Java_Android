@@ -7,7 +7,11 @@ class WTFSocketHeartbeatTask implements Runnable {
 
         WTFSocketConfig config = WTFSocketSessionFactory.getConfig();
 
-        WTFSocketSessionFactory.HEARTBEAT.sendMsg(WTFSocketMsg.heartbeat(), new WTFSocketHandler() {
+        WTFSocketMsg heartbeat = new WTFSocketMsg();
+
+        heartbeat.setMsgType(0);
+
+        WTFSocketSessionFactory.HEARTBEAT.sendMsg(heartbeat, new WTFSocketHandler() {
 
             @Override
             public boolean onReceive(WTFSocketSession session, WTFSocketMsg msg) {
