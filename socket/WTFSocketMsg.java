@@ -31,8 +31,6 @@ public class WTFSocketMsg {
     @Option
     private JSONObject body = null;
 
-
-
     @JSONField(serialize = false)
     private WTFSocketMsgWrapper wrapper;
 
@@ -41,7 +39,7 @@ public class WTFSocketMsg {
         return JSON.toJSONString(wrapper);
     }
 
-    String getFrom() {
+    public String getFrom() {
         return from;
     }
 
@@ -50,7 +48,7 @@ public class WTFSocketMsg {
         return this;
     }
 
-    String getTo() {
+    public String getTo() {
         return to;
     }
 
@@ -59,7 +57,7 @@ public class WTFSocketMsg {
         return this;
     }
 
-    Integer getMsgId() {
+    public Integer getMsgId() {
         return msgId;
     }
 
@@ -68,7 +66,7 @@ public class WTFSocketMsg {
         return this;
     }
 
-    Integer getMsgType() {
+    public Integer getMsgType() {
         return msgType;
     }
 
@@ -94,7 +92,7 @@ public class WTFSocketMsg {
         this.state = state;
     }
 
-    String getVersion() {
+    public String getVersion() {
         return version;
     }
 
@@ -106,8 +104,16 @@ public class WTFSocketMsg {
         return body;
     }
 
+    public <T> T getBody(Class<T> tClass) {
+        return body.toJavaObject(tClass);
+    }
+
     public WTFSocketMsg setBody(JSONObject body) {
         this.body = body;
         return this;
+    }
+
+    public WTFSocketMsg setBody(Object body) {
+        return setBody((JSONObject) JSON.toJSON(body));
     }
 }
