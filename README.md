@@ -4,22 +4,6 @@
 
 适用于使用一个socket客户端，和多个对象的通话的场景。
 
-**Protocol**
-
-```js
-{
-    "from" : String,       // @necessary
-    "to" : String,         // @necessary
-    "msgId": int,          // @necessary
-    "msgType": int,        // @necessary
-    "flag" : int,          // @option
-    "errCode" : int,       // @option
-    "cmd" : int,           // @option
-    "params" : Array<JSON> // @option
-}\r\n                      // @necessary
-
-```
-
 **Need**
 
 `JDK-1.7`／`Android-6.0` or later
@@ -55,7 +39,7 @@ WTFSocketSession session = WTFSocketSessionFactory.getSession("targetName");
 
 // step 4
 // 创建到指定对象的会话
-session.sendMsg(WTFSocketMsg.empty()); 
+session.sendMsg(new WTFSocketMsg()); 
 
 // finish
 // so easy
