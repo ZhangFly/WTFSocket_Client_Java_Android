@@ -55,4 +55,4 @@ session.sendMsg(new WTFSocketMsg());
 
 **Document**
 
-[`gitbook`](https://zoutstanding.gitbooks.io/wtfsocket/content/)
+[`gitbook`](https://zoutstanding.gitbooks.io/wtfsocket-client-java-android/content/)
