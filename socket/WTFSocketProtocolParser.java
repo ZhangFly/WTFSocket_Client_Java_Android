@@ -1,6 +1,7 @@
 package wtf.socket;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import wtf.socket.WTFSocketAnnotations.Necessary;
 import wtf.socket.WTFSocketAnnotations.Option;
@@ -12,7 +13,7 @@ import java.util.List;
 /**
  * 协议解析器
  */
-class WTFSocketProtocolParser{
+class WTFSocketProtocolParser {
 
     // 传输终止符
     static final String EOT = "\r\n";
@@ -44,11 +45,20 @@ class WTFSocketProtocolParser{
 
     // 检查协议完整性
     // 并转换为JSONObject
-    private JSONObject checkAndConvert(String packet) throws Exception {
-        JSONObject json = JSON.parseObject(packet);
+    private JSONObject checkAndConvert(String packet) throws WTFSocketLackNecessaryAttrException, WTFSocketProtocolFormatException {
+
+        JSONObject json;
+
+        try {
+            json = JSON.parseObject(packet);
+        } catch (JSONException e) {
+            WTFSocketProtocolFormatException e1 = new WTFSocketProtocolFormatException(e.getMessage());
+            e1.setAddition(packet);
+            throw e1;
+        }
         for (String attr : necessaryAttrs) {
             if (!json.containsKey(attr)) {
-                throw new Exception("lack necessary attr => " + attr);
+                throw new WTFSocketLackNecessaryAttrException("lack necessary attr => <" + attr + ">");
             }
         }
         return json;
@@ -57,7 +67,7 @@ class WTFSocketProtocolParser{
     // 解析并装载有效数据包
     // 数据包将会被装载到 packets 中
     // 如果方式异常将会中断
-    <T> void parseAndLoadPackets(String data, List<T> packets, Class<T> tClass) throws Exception {
+    <T> void parseAndLoadPackets(String data, List<T> packets, Class<T> tClass) throws WTFSocketLackNecessaryAttrException, WTFSocketProtocolFormatException {
         if (data != null) {
             buffer.append(data);
         }

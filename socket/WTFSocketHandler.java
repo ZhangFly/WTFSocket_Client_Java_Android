@@ -6,7 +6,7 @@ package wtf.socket;
 public abstract class WTFSocketHandler {
 
     /**
-     * 收到消息
+     * 通信成功
      *
      * @param session 会话对象
      * @param msg 会话消息

@@ -29,6 +29,9 @@ class WTFSocketMsgWrapper {
     @JSONField(serialize = false)
     private boolean isNeedResponse = false;
 
+    @JSONField(serialize = false)
+    private int priority = -1;
+
     static WTFSocketMsgWrapper empty() {
         return wrapMsg(null, new WTFSocketMsg());
     }
@@ -186,6 +189,16 @@ class WTFSocketMsgWrapper {
     @JSONField(serialize = false)
     public boolean isTimeout() {
         return timeout < System.currentTimeMillis();
+    }
+
+    @JSONField(serialize = false)
+    public int getPriority() {
+        return priority;
+    }
+
+    @JSONField(serialize = false)
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     @Override

@@ -184,7 +184,7 @@ public class WTFSocketSession {
         if (ObjectUtils.equals(this, WTFSocketSessionFactory.HEARTBEAT)) {
             this.clearWaitQ(waitSendMsgQ, false);
             this.clearWaitQ(waitResponseMsgQ, false);
-        }else {
+        } else {
             this.clearWaitQ(waitSendMsgQ, true);
             this.clearWaitQ(waitResponseMsgQ, true);
         }
@@ -199,7 +199,6 @@ public class WTFSocketSession {
 
         for (int i = 0; i < len; i++) {
             WTFSocketMsgWrapper wrapper = waitResponseMsgQ.poll();
-
             if (StringUtils.equals(wrapper.getTag(), msgTag)) {
                 if (wrapper.getHandler().onReceive(this, msgWrapper.getMsg())) {
                     return true;
@@ -210,6 +209,7 @@ public class WTFSocketSession {
         }
 
         return defaultResponse.onReceive(this, msgWrapper.getMsg());
+
     }
 
     // 派发异常
@@ -236,7 +236,7 @@ public class WTFSocketSession {
 
             if (wrapper.isTimeout()) {
                 WTFSocketSessionFactory.dispatchException(
-                        new WTFSocketException("wait response timed out"),
+                        new WTFSocketTimeoutException("wait response timed out"),
                         wrapper);
             } else {
                 waitResponseMsgQ.add(wrapper);
@@ -260,7 +260,7 @@ public class WTFSocketSession {
 
                 WTFSocketMsgWrapper msgWrapper = waitSendMsgQ.poll();
                 if (msgWrapper.isTimeout()) {
-                    WTFSocketSessionFactory.dispatchException(new WTFSocketException("wait send timed out"), msgWrapper);
+                    WTFSocketSessionFactory.dispatchException(new WTFSocketTimeoutException("wait send timed out"), msgWrapper);
                     continue;
                 }
                 if (msgWrapper.isNeedResponse()) {
@@ -287,12 +287,12 @@ public class WTFSocketSession {
     // 清空等待回复队列
     void clearWaitQ(ConcurrentLinkedQueue<WTFSocketMsgWrapper> waitQ, boolean isTrigger) {
         if (isTrigger) {
-            while(!waitQ.isEmpty()) {
+            while (!waitQ.isEmpty()) {
                 WTFSocketSessionFactory.dispatchException(
-                        new WTFSocketException("wait response timed out"),
+                        new WTFSocketTimeoutException("wait response timed out"),
                         waitQ.poll());
             }
-        }else {
+        } else {
             waitQ.clear();
         }
     }

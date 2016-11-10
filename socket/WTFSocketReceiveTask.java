@@ -1,5 +1,6 @@
 package wtf.socket;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +36,13 @@ class WTFSocketReceiveTask implements Runnable {
             data = WTFSocketSessionFactory.getDecoder().decode(bytes, readLen);
             parser.parseAndLoadPackets(data, packets, WTFSocketMsgWrapper.class);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             WTFSocketSessionFactory.dispatchException(
-                    new WTFSocketException(e.getMessage()).setAddition(data)
+                    new WTFSocketIOException(e.getMessage()).setAddition(data)
             );
-        } finally {
+        } catch (WTFSocketLackNecessaryAttrException | WTFSocketProtocolFormatException e) {
+            WTFSocketSessionFactory.dispatchException(e);
+        }  finally{
             for (WTFSocketMsgWrapper packet : packets) {
 
                 if (packet.getMsgType() == 1) {

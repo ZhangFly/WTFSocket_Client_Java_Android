@@ -7,6 +7,7 @@ import java.net.Socket;
 
 class WTFSocketSendTask implements Runnable {
 
+
     @Override
     public void run() {
 
@@ -63,7 +64,7 @@ class WTFSocketSendTask implements Runnable {
             }
 
         } catch (IOException e) {
-            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()), msgWrapper);
+            WTFSocketSessionFactory.dispatchException(new WTFSocketIOException(e.getMessage()), msgWrapper);
         }
     }
 }

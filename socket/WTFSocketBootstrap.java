@@ -70,7 +70,7 @@ class WTFSocketBootstrap implements Runnable {
             WTFSocketSessionFactory.notifyEventListeners(WTFSocketEventType.CONNECT);
 
         } catch (IOException e) {
-            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
+            WTFSocketSessionFactory.dispatchException(new WTFSocketIOException(e.getMessage()));
         }
     }
 
@@ -88,7 +88,7 @@ class WTFSocketBootstrap implements Runnable {
             // 关闭socket连接
             socket.close();
         } catch (Exception e) {
-            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
+            WTFSocketSessionFactory.dispatchException(new WTFSocketIOException(e.getMessage()));
         }
     }
 
@@ -99,7 +99,7 @@ class WTFSocketBootstrap implements Runnable {
             socket.close();
             frameSchedule.shutdown();
         } catch (Exception e) {
-            WTFSocketSessionFactory.dispatchException(new WTFSocketException(e.getMessage()));
+            WTFSocketSessionFactory.dispatchException(new WTFSocketIOException(e.getMessage()));
         }
     }
 

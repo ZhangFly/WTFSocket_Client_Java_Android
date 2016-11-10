@@ -139,7 +139,6 @@ public class WTFSocketSessionFactory {
     /**
      * 反初始化
      * 不会关闭监听线程
-     *
      */
     public static void deInit() {
 
@@ -155,7 +154,6 @@ public class WTFSocketSessionFactory {
 
     /**
      * 复位
-     *
      */
     public static void reInit() {
         if (isAvailable) {
@@ -167,7 +165,6 @@ public class WTFSocketSessionFactory {
     /**
      * 终止框架
      * 并关闭监听线程
-     *
      */
     public static void shutdown() {
         WTFSocketBootstrap.shutdown();
@@ -267,11 +264,11 @@ public class WTFSocketSessionFactory {
         sessions.put(to, session);
         if (!"server".equals(to) && !"empty".equals(to) && !"heartbeat".equals(to))
 
-        if (!StringUtils.equals("server", to)
-                && StringUtils.equals("empty", to)
-                && StringUtils.equals("heartbeat", to)) {
-            notifyEventListeners(WTFSocketEventType.NEW_SESSION, session, msg);
-        }
+            if (!StringUtils.equals("server", to)
+                    && StringUtils.equals("empty", to)
+                    && StringUtils.equals("heartbeat", to)) {
+                notifyEventListeners(WTFSocketEventType.NEW_SESSION, session, msg);
+            }
         return session;
     }
 
@@ -292,7 +289,7 @@ public class WTFSocketSessionFactory {
     public static void setEncoder(WTFSocketEncoder encoder) {
         if (encoder != null) {
             WTFSocketSessionFactory.encoder = encoder;
-        }else {
+        } else {
             WTFSocketSessionFactory.encoder = DEFAULT_ENCODER;
         }
     }
@@ -314,7 +311,7 @@ public class WTFSocketSessionFactory {
     public static void setDecoder(WTFSocketDecoder decoder) {
         if (encoder != null) {
             WTFSocketSessionFactory.decoder = decoder;
-        }else {
+        } else {
             WTFSocketSessionFactory.decoder = DEFAULT_DECODER;
         }
     }
