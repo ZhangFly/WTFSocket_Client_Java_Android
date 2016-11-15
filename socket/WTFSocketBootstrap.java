@@ -35,7 +35,7 @@ class WTFSocketBootstrap implements Runnable {
         if (config.isUseHeartbeat()) {
             frameSchedule.scheduleAtFixedRate(
                     new WTFSocketHeartbeatTask(),
-                    100,
+                    config.getHeartbeatPeriod(),
                     config.getHeartbeatPeriod(), TimeUnit.MILLISECONDS
             );
         }
